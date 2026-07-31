@@ -1,0 +1,9 @@
+# Datasets, engine artifacts, and raw run output stay local;
+# curated results are committed under <Benchmark>/results/.
+**/data/
+**/runs/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
