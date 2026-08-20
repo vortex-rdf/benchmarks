@@ -4,6 +4,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from DBBench.execution import run as run_dbbench
 from DBBench.manifest import prepare as prepare_dbbench
 from benchmark_core import MANIFEST_SCHEMA_VERSION, RESULT_SCHEMA_VERSION, __version__
 from benchmark_core.manifest import load_manifest
@@ -31,6 +32,15 @@ def _parser() -> argparse.ArgumentParser:
     prepare.add_argument("--groups", nargs="+", default=["TP", "JOINS"])
     prepare.add_argument("--join-sizes", nargs="+", default=["small", "big"])
     prepare.add_argument("--query-id-file")
+    run_command = dbbench_commands.add_parser("run")
+    run_command.add_argument("--manifest", required=True)
+    run_command.add_argument("--dataset-path", required=True)
+    run_command.add_argument("--output", required=True)
+    run_command.add_argument("--experiment-id", required=True)
+    run_command.add_argument("--warmup-runs", type=int, default=1)
+    run_command.add_argument("--measured-runs", type=int, default=5)
+    run_command.add_argument("--timeout-s", type=float, default=60.0)
+    run_command.add_argument("--resume", action="store_true")
     manifest = commands.add_parser("manifest")
     manifest_commands = manifest.add_subparsers(dest="manifest_command", required=True)
     manifest_validate = manifest_commands.add_parser("validate")
@@ -52,6 +62,15 @@ def main(argv=None) -> int:
                 "result_schema_version": RESULT_SCHEMA_VERSION,
                 "commands": ["describe", "manifest validate", "results validate"],
             }, sort_keys=True))
+            return EXIT_SUCCESS
+        if args.command == "dbbench" and args.dbbench_command == "run":
+            records = run_dbbench(
+                manifest_path=Path(args.manifest), dataset_path=Path(args.dataset_path),
+                output=Path(args.output), experiment_id=args.experiment_id,
+                warmup_runs=args.warmup_runs, measured_runs=args.measured_runs,
+                timeout_s=args.timeout_s, resume=args.resume,
+            )
+            print(json.dumps({"records": len(records), "written": args.output}, sort_keys=True))
             return EXIT_SUCCESS
         if args.command == "dbbench":
             manifest = prepare_dbbench(
