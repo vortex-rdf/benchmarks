@@ -3,6 +3,8 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from pathlib import Path
+from DBBench.manifest import prepare as prepare_dbbench
 from benchmark_core import MANIFEST_SCHEMA_VERSION, RESULT_SCHEMA_VERSION, __version__
 from benchmark_core.manifest import load_manifest
 from benchmark_core.result import load_results
@@ -17,6 +19,18 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--version", action="version", version=__version__)
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("describe")
+    dbbench = commands.add_parser("dbbench")
+    dbbench_commands = dbbench.add_subparsers(dest="dbbench_command", required=True)
+    prepare = dbbench_commands.add_parser("prepare")
+    source = prepare.add_mutually_exclusive_group(required=True)
+    source.add_argument("--inventory")
+    source.add_argument("--query-root")
+    prepare.add_argument("--output", required=True)
+    prepare.add_argument("--workload", default="dbbench-tp-joins")
+    prepare.add_argument("--dataset", required=True)
+    prepare.add_argument("--groups", nargs="+", default=["TP", "JOINS"])
+    prepare.add_argument("--join-sizes", nargs="+", default=["small", "big"])
+    prepare.add_argument("--query-id-file")
     manifest = commands.add_parser("manifest")
     manifest_commands = manifest.add_subparsers(dest="manifest_command", required=True)
     manifest_validate = manifest_commands.add_parser("validate")
@@ -38,6 +52,20 @@ def main(argv=None) -> int:
                 "result_schema_version": RESULT_SCHEMA_VERSION,
                 "commands": ["describe", "manifest validate", "results validate"],
             }, sort_keys=True))
+            return EXIT_SUCCESS
+        if args.command == "dbbench":
+            manifest = prepare_dbbench(
+                output=Path(args.output), workload=args.workload,
+                dataset=args.dataset,
+                inventory=Path(args.inventory) if args.inventory else None,
+                query_root=Path(args.query_root) if args.query_root else None,
+                groups=args.groups, join_sizes=args.join_sizes,
+                query_id_file=(Path(args.query_id_file)
+                               if args.query_id_file else None),
+            )
+            print(json.dumps({"written": args.output,
+                              "queries": len(manifest["queries"])},
+                             sort_keys=True))
             return EXIT_SUCCESS
         if args.command == "manifest":
             value = load_manifest(args.path)
