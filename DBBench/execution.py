@@ -9,8 +9,10 @@ import tempfile
 import time
 from typing import Any
 
+import rdflib
 from rdflib import Graph
 from benchmark_core import RESULT_SCHEMA_VERSION
+from benchmark_core.hashing import sha256_file
 from benchmark_core.manifest import load_manifest
 from benchmark_core.result import validate_result
 
@@ -84,19 +86,53 @@ def execute_query(graph: Graph, query: dict[str, Any], timeout_s: float | None) 
 def run(*, manifest_path: Path, dataset_path: Path, output: Path,
         experiment_id: str, warmup_runs: int = 1, measured_runs: int = 5,
         timeout_s: float | None = 60.0, resume: bool = False) -> list[dict[str, Any]]:
+    manifest_path = manifest_path.resolve()
+    dataset_path = dataset_path.resolve()
+    output = output.resolve()
     if warmup_runs < 0 or measured_runs < 1:
         raise ValueError('warmup_runs must be non-negative and measured_runs must be positive')
     manifest = load_manifest(manifest_path)
     graph = Graph()
     graph.parse(dataset_path)
+    manifest_sha256 = sha256_file(manifest_path)
+    dataset_sha256 = sha256_file(dataset_path)
+    expected_provenance = {
+        'experiment_id': experiment_id,
+        'system': 'rdflib',
+        'dataset': manifest['dataset'],
+        'workload': manifest['workload'],
+        'manifest_sha256': manifest_sha256,
+        'dataset_sha256': dataset_sha256,
+    }
     completed: set[tuple[str, str, int]] = set()
     existing: list[dict[str, Any]] = []
     if resume and output.exists():
-        for line in output.read_text(encoding='utf-8').splitlines():
-            if line.strip():
+        for line_number, line in enumerate(
+                output.read_text(encoding='utf-8').splitlines(), start=1):
+            if not line.strip():
+                continue
+            try:
                 record = validate_result(json.loads(line))
-                existing.append(record)
-                completed.add((record['query_id'], record['phase'], record['run']))
+            except (json.JSONDecodeError, TypeError, ValueError) as error:
+                raise ValueError(
+                    f'invalid resume record at line {line_number}: {error}'
+                ) from error
+            for field, expected in expected_provenance.items():
+                if record.get(field) != expected:
+                    raise ValueError(
+                        f'incompatible resume record at line {line_number}: '
+                        f'{field}={record.get(field)!r}, expected {expected!r}'
+                    )
+            key = (record['query_id'], record['phase'], record['run'])
+            if key in completed:
+                raise ValueError(f'duplicate resume key at line {line_number}: {key}')
+            if record['phase'] not in {'warmup', 'measured'}:
+                raise ValueError(f'unsupported resume phase: {record["phase"]}')
+            limit = warmup_runs if record['phase'] == 'warmup' else measured_runs
+            if record['run'] >= limit:
+                raise ValueError(f'resume run is outside requested range: {key}')
+            existing.append(record)
+            completed.add(key)
     records = list(existing)
     order = len(records)
     for query in manifest['queries']:
@@ -112,9 +148,11 @@ def run(*, manifest_path: Path, dataset_path: Path, output: Path,
                     'query_id': query['query_id'], 'phase': phase,
                     'run': run_index, 'order': order,
                     **measured,
-                    'engine': {'name': 'rdflib'},
-                    'dataset_path': str(dataset_path),
-                    'manifest_path': str(manifest_path),
+                    'engine': {
+                        'name': 'rdflib', 'version': rdflib.__version__,
+                    },
+                    'manifest_sha256': manifest_sha256,
+                    'dataset_sha256': dataset_sha256,
                 }
                 records.append(validate_result(record)); order += 1
     output.parent.mkdir(parents=True, exist_ok=True)
