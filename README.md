@@ -24,7 +24,7 @@ say so in their READMEs.
 | [DBBench](DBBench/) | DBpedia triple-pattern + join workload from the pycottas experiments | **runnable** (migrated from `vortex-rdf/scripts/DBBench`) |
 | [WatDiv](WatDiv/) | Synthetic, structurally diverse BGPs (linear/star/snowflake/complex) | planned |
 | [WDBench](WDBench/) | Real Wikidata data (~1.25B triples) + real query-log patterns and paths | planned |
-| [BSBM](BSBM/) | E-commerce query mixes; broad SPARQL feature coverage | planned |
+| [BSBM](BSBM/) | E-commerce query mixes; broad SPARQL feature coverage | **adapter ready** |
 | [LUBM](LUBM/) | University domain; classic 14-query set, inference-oriented | planned |
 | [SP2Bench](SP2Bench/) | DBLP-like data; SPARQL operator-combination stress queries | planned |
 | [FEASIBLE](FEASIBLE/) | Representative query sets mined from real DBpedia query logs | planned |

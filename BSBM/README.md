@@ -1,29 +1,33 @@
-# BSBM — Berlin SPARQL Benchmark
+# BSBM adapter
 
-> **Status: planned** — no setup or results yet.
+This folder contains the BSBM adapter. The adapter converts instantiated BSBM SPARQL queries to the common RDF workload manifest.
 
-[BSBM](http://wbsg.informatik.uni-mannheim.de/bizer/berlinsparqlbenchmark/)
-(Bizer & Schultz) is a classic SPARQL benchmark built around an
-**e-commerce use case**: products with features, vendors, offers, and
-reviews. Unlike WatDiv/WDBench it runs *query mixes* that simulate a user
-session, and its queries use a broad slice of SPARQL (FILTER, OPTIONAL,
-ORDER BY, DESCRIBE, CONSTRUCT, UNION) — so for vortex-rdf it measures the
-combined rdflib + store stack rather than pattern matching alone.
+## Required local files
 
-- **Data**: generator scales by number of products (e.g. 10K products ≈ 3.5M
-  triples; commonly run from 1M to 1B triples).
-- **Workloads**: *Explore* (read-only query mix), *Explore-and-Update*, and
-  a *Business Intelligence* (analytical) mix.
-- **Tooling**: Java data generator + test driver
-  ([sourceforge.net/projects/bsbmtools](https://sourceforge.net/projects/bsbmtools/)).
-  The stock driver targets a SPARQL endpoint over HTTP, so either front
-  vortex-rdf with a minimal endpoint (e.g. rdflib + a SPARQL HTTP wrapper)
-  or replay the generated query mixes through the rdflib harness directly.
+Do not commit benchmark datasets or generated query instances. Place them at:
 
-## Planned setup
+```text
+BSBM/data/dataset.ttl
+BSBM/data/queries/
+  query-01.rq
+  query-02.rq
+  ...
+```
 
-1. Generate data at one or more scales into `BSBM/data/` (git-ignored).
-2. Serialize to `.vortex` and comparison-engine artifacts.
-3. Start with the Explore mix (read-only) replayed through the rdflib
-   harness; updates require store write support and can come later.
-4. Commit curated results to `results/`.
+`dataset.ttl` can also use `.nt`, `.nq`, or `.trig`. Each file under `queries/` must contain one complete executable query. Use `.rq` or `.sparql`. Do not place parameterized templates there. Instantiate all BSBM parameters first.
+
+The repository `.gitignore` excludes every `data/` directory. The user must obtain or generate these files with the official BSBM tools.
+
+## Prepare a manifest
+
+```bash
+vortex-rdf-bench bsbm prepare \
+  --query-root BSBM/data/queries \
+  --output BSBM/data/bsbm-manifest.json \
+  --dataset bsbm-local \
+  --workload bsbm-explore
+```
+
+## KROWN
+
+Set `KROWN_RDF_DATASET_FILE` to the local dataset file. The KROWN scenario calls this adapter through `benchmark_root=/users/u0182905/benchmarks`. It then uses the generic RDF query resource.

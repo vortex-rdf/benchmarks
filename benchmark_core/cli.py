@@ -6,6 +6,8 @@ import sys
 from pathlib import Path
 from DBBench.execution import run as run_dbbench
 from DBBench.manifest import prepare as prepare_dbbench
+from BSBM.execution import run as run_bsbm
+from BSBM.manifest import prepare as prepare_bsbm
 from benchmark_core import MANIFEST_SCHEMA_VERSION, RESULT_SCHEMA_VERSION, __version__
 from benchmark_core.manifest import load_manifest
 from benchmark_core.result import load_results
@@ -20,6 +22,22 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--version", action="version", version=__version__)
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("describe")
+    bsbm = commands.add_parser("bsbm")
+    bsbm_commands = bsbm.add_subparsers(dest="bsbm_command", required=True)
+    bsbm_prepare = bsbm_commands.add_parser("prepare")
+    bsbm_prepare.add_argument("--query-root", required=True)
+    bsbm_prepare.add_argument("--output", required=True)
+    bsbm_prepare.add_argument("--workload", default="bsbm-explore")
+    bsbm_prepare.add_argument("--dataset", required=True)
+    bsbm_run = bsbm_commands.add_parser("run")
+    bsbm_run.add_argument("--manifest", required=True)
+    bsbm_run.add_argument("--dataset-path", required=True)
+    bsbm_run.add_argument("--output", required=True)
+    bsbm_run.add_argument("--experiment-id", required=True)
+    bsbm_run.add_argument("--warmup-runs", type=int, default=1)
+    bsbm_run.add_argument("--measured-runs", type=int, default=5)
+    bsbm_run.add_argument("--timeout-s", type=float, default=60.0)
+    bsbm_run.add_argument("--resume", action="store_true")
     dbbench = commands.add_parser("dbbench")
     dbbench_commands = dbbench.add_subparsers(dest="dbbench_command", required=True)
     prepare = dbbench_commands.add_parser("prepare")
@@ -62,6 +80,22 @@ def main(argv=None) -> int:
                 "result_schema_version": RESULT_SCHEMA_VERSION,
                 "commands": ["describe", "manifest validate", "results validate"],
             }, sort_keys=True))
+            return EXIT_SUCCESS
+        if args.command == "bsbm" and args.bsbm_command == "run":
+            records = run_bsbm(
+                manifest_path=Path(args.manifest), dataset_path=Path(args.dataset_path),
+                output=Path(args.output), experiment_id=args.experiment_id,
+                warmup_runs=args.warmup_runs, measured_runs=args.measured_runs,
+                timeout_s=args.timeout_s, resume=args.resume,
+            )
+            print(json.dumps({"records": len(records), "written": args.output}, sort_keys=True))
+            return EXIT_SUCCESS
+        if args.command == "bsbm":
+            manifest = prepare_bsbm(
+                query_root=Path(args.query_root), output=Path(args.output),
+                workload=args.workload, dataset=args.dataset,
+            )
+            print(json.dumps({"written": args.output, "queries": len(manifest["queries"])}, sort_keys=True))
             return EXIT_SUCCESS
         if args.command == "dbbench" and args.dbbench_command == "run":
             records = run_dbbench(
