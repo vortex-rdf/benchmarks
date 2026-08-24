@@ -1,33 +1,38 @@
 # BSBM adapter
 
-This folder contains the BSBM adapter. The adapter converts instantiated BSBM SPARQL queries to the common RDF workload manifest.
+This adapter imports BSBM artifacts. It does not download, build, or run the BSBM generator.
 
-## Required local files
+## Generate outside the framework
 
-Do not commit benchmark datasets or generated query instances. Place them at:
+Use the original BSBM tools in a separate checkout. Put each generated scale under the ignored `BSBM/data/` directory:
 
 ```text
-BSBM/data/dataset.ttl
-BSBM/data/queries/
-  query-01.rq
-  query-02.rq
-  ...
+BSBM/data/explore-1k/
+  dataset.nt
+  explore.csv
+  generation-receipt.json
+  td_data/
 ```
 
-`dataset.ttl` can also use `.nt`, `.nq`, or `.trig`. Each file under `queries/` must contain one complete executable query. Use `.rq` or `.sparql`. Do not place parameterized templates there. Instantiate all BSBM parameters first.
+The receipt must record dataset and stream hashes, stream counts, generator commit, seed, product count, and BSBM use case. Generated assets stay outside Git.
 
-The repository `.gitignore` excludes every `data/` directory. The user must obtain or generate these files with the official BSBM tools.
-
-## Prepare a manifest
+## Import the official Explore stream
 
 ```bash
 vortex-rdf-bench bsbm prepare \
-  --query-root BSBM/data/queries \
-  --output BSBM/data/bsbm-manifest.json \
-  --dataset bsbm-local \
-  --workload bsbm-explore
+  --query-stream BSBM/data/explore-1k/explore.csv \
+  --generation-receipt BSBM/data/explore-1k/generation-receipt.json \
+  --dataset-path BSBM/data/explore-1k/dataset.nt \
+  --selection smoke \
+  --output BSBM/data/explore-1k/smoke-manifest.json \
+  --dataset bsbm-explore-1k \
+  --workload bsbm-explore-smoke
 ```
+
+`smoke` selects the first measured instance of each query template. `full` preserves every stream record. The adapter preserves repeated template IDs, stream positions, and the original warm-up or measured classification.
+
+The query-directory mode remains available through `--query-root` for manually prepared workloads.
 
 ## KROWN
 
-Set `KROWN_RDF_DATASET_FILE` to the local dataset file. The KROWN scenario calls this adapter through `benchmark_root=/users/u0182905/benchmarks`. It then uses the generic RDF query resource.
+Set `KROWN_BSBM_QUERY_STREAM`, `KROWN_BSBM_GENERATION_RECEIPT`, and `KROWN_RDF_DATASET_FILE`. KROWN imports and executes the artifacts. It does not generate them.

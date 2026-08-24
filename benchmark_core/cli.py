@@ -25,7 +25,12 @@ def _parser() -> argparse.ArgumentParser:
     bsbm = commands.add_parser("bsbm")
     bsbm_commands = bsbm.add_subparsers(dest="bsbm_command", required=True)
     bsbm_prepare = bsbm_commands.add_parser("prepare")
-    bsbm_prepare.add_argument("--query-root", required=True)
+    bsbm_source = bsbm_prepare.add_mutually_exclusive_group(required=True)
+    bsbm_source.add_argument("--query-root")
+    bsbm_source.add_argument("--query-stream")
+    bsbm_prepare.add_argument("--generation-receipt")
+    bsbm_prepare.add_argument("--dataset-path")
+    bsbm_prepare.add_argument("--selection", choices=("smoke", "full"), default="smoke")
     bsbm_prepare.add_argument("--output", required=True)
     bsbm_prepare.add_argument("--workload", default="bsbm-explore")
     bsbm_prepare.add_argument("--dataset", required=True)
@@ -92,7 +97,11 @@ def main(argv=None) -> int:
             return EXIT_SUCCESS
         if args.command == "bsbm":
             manifest = prepare_bsbm(
-                query_root=Path(args.query_root), output=Path(args.output),
+                query_root=Path(args.query_root) if args.query_root else None,
+                query_stream=Path(args.query_stream) if args.query_stream else None,
+                generation_receipt=(Path(args.generation_receipt) if args.generation_receipt else None),
+                dataset_path=Path(args.dataset_path) if args.dataset_path else None,
+                selection=args.selection, output=Path(args.output),
                 workload=args.workload, dataset=args.dataset,
             )
             print(json.dumps({"written": args.output, "queries": len(manifest["queries"])}, sort_keys=True))
