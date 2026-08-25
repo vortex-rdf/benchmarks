@@ -37,6 +37,10 @@ comparison), and **DBPSB** (superseded by FEASIBLE). The
 of the above against SPARQL endpoints if an endpoint-based comparison is
 ever needed.
 
+## Architecture
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the enforced boundary between external generators, benchmark adapters, and KROWN.
+
 ## Repository conventions
 
 Each benchmark folder is self-contained:
