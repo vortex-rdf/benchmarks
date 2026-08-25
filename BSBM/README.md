@@ -83,3 +83,27 @@ The command writes the COTTAS file atomically. It verifies the file with `pycott
 It then records the file size, SHA-256 value, producer, and source RDF identity.
 The inventory preserves existing representations and adds `cottas/default`.
 All generated files remain under the ignored `BSBM/data/` directory.
+
+## Generate the bootstrap Vortex-RDF representation
+
+The bootstrap configuration uses the unified native RDF store. It uses a simple dictionary index.
+Build the CLI from the pinned Vortex-RDF commit, then generate the artifact:
+
+```bash
+cd /users/u0182905/vortex-rdf
+cargo build --release -p vortex-rdf-cli
+
+cd /users/u0182905/benchmarks
+vortex-rdf-bench bsbm generate-vortex-rdf \
+  --source BSBM/data/explore-1k/dataset.nt \
+  --output BSBM/data/explore-1k/dataset-bootstrap.vortex \
+  --rdf-receipt BSBM/data/explore-1k/rdf-source-receipt.json \
+  --vortex-receipt BSBM/data/explore-1k/vortex-rdf-bootstrap-receipt.json \
+  --inventory BSBM/data/explore-1k/dataset-inventory.json \
+  --vortex-cli /users/u0182905/vortex-rdf/target/release/vortex-rdf-cli \
+  --vortex-repository /users/u0182905/vortex-rdf \
+  --source-triple-count 374911
+```
+
+The physical representation identifier is `vortex-rdf/simple-dictionary-native-rdf-store`.
+The receipt records the Vortex-RDF commit, release binary hash, index type, storage layout, command, and source identity.

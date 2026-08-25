@@ -10,6 +10,7 @@ from BSBM.execution import run as run_bsbm
 from BSBM.manifest import prepare as prepare_bsbm
 from BSBM.hdt import generate as generate_bsbm_hdt
 from BSBM.cottas import generate as generate_bsbm_cottas
+from BSBM.vortex_rdf import generate as generate_bsbm_vortex_rdf
 from benchmark_core import MANIFEST_SCHEMA_VERSION, RESULT_SCHEMA_VERSION, __version__
 from benchmark_core.manifest import load_manifest
 from benchmark_core.result import load_results
@@ -42,6 +43,10 @@ def _parser() -> argparse.ArgumentParser:
     for option in ("source", "output", "rdf-receipt", "cottas-receipt", "inventory"):
         bsbm_cottas.add_argument(f"--{option}", required=True)
     bsbm_cottas.add_argument("--source-triple-count", type=int, required=True)
+    bsbm_vortex = bsbm_commands.add_parser("generate-vortex-rdf")
+    for option in ("source", "output", "rdf-receipt", "vortex-receipt", "inventory", "vortex-cli", "vortex-repository"):
+        bsbm_vortex.add_argument(f"--{option}", required=True)
+    bsbm_vortex.add_argument("--source-triple-count", type=int, required=True)
     bsbm_prepare = bsbm_commands.add_parser("prepare")
     bsbm_source = bsbm_prepare.add_mutually_exclusive_group(required=True)
     bsbm_source.add_argument("--query-root")
@@ -120,6 +125,13 @@ def main(argv=None) -> int:
             value = generate_bsbm_cottas(source=Path(args.source), output=Path(args.output),
                 rdf_receipt=Path(args.rdf_receipt), cottas_receipt=Path(args.cottas_receipt),
                 inventory=Path(args.inventory), source_triple_count=args.source_triple_count)
+            print(json.dumps({"written": args.output, "representation": value["representation"]}, sort_keys=True))
+            return EXIT_SUCCESS
+        if args.command == "bsbm" and args.bsbm_command == "generate-vortex-rdf":
+            value = generate_bsbm_vortex_rdf(source=Path(args.source), output=Path(args.output),
+                rdf_receipt=Path(args.rdf_receipt), vortex_receipt=Path(args.vortex_receipt),
+                inventory=Path(args.inventory), vortex_cli=Path(args.vortex_cli),
+                vortex_repository=Path(args.vortex_repository), source_triple_count=args.source_triple_count)
             print(json.dumps({"written": args.output, "representation": value["representation"]}, sort_keys=True))
             return EXIT_SUCCESS
         if args.command == "bsbm" and args.bsbm_command == "run":
