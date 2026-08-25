@@ -41,3 +41,24 @@ Create `rdf/source`, `hdt/default`, `cottas/default`, and selected `vortex-rdf/<
 
 
 Set `KROWN_BSBM_QUERY_STREAM`, `KROWN_BSBM_GENERATION_RECEIPT`, and `KROWN_RDF_DATASET_FILE`. KROWN imports and executes the artifacts. It does not generate them.
+
+## Generate the HDT representation
+
+An HDT representation is the physical `hdt/default` form of the same logical RDF dataset.
+Use the pinned Rust `rdf2hdt` tool, version `0.2.0`:
+
+```bash
+cargo install --root BSBM/data/tools/rdf2hdt-0.2.0 --locked --version 0.2.0 rdf2hdt
+vortex-rdf-bench bsbm generate-hdt \
+  --source BSBM/data/explore-1k/dataset.nt \
+  --output BSBM/data/explore-1k/dataset.hdt \
+  --rdf-receipt BSBM/data/explore-1k/rdf-source-receipt.json \
+  --hdt-receipt BSBM/data/explore-1k/hdt-default-receipt.json \
+  --inventory BSBM/data/explore-1k/dataset-inventory.json \
+  --rdf2hdt BSBM/data/tools/rdf2hdt-0.2.0/bin/rdf2hdt \
+  --source-triple-count 374911
+```
+
+The command writes the HDT file atomically. It then records its size, SHA-256 value, producer,
+and source RDF identity. The inventory references both `rdf/source` and `hdt/default`.
+All generated files remain under the ignored `BSBM/data/` directory.

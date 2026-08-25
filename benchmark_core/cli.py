@@ -8,6 +8,7 @@ from DBBench.execution import run as run_dbbench
 from DBBench.manifest import prepare as prepare_dbbench
 from BSBM.execution import run as run_bsbm
 from BSBM.manifest import prepare as prepare_bsbm
+from BSBM.hdt import generate as generate_bsbm_hdt
 from benchmark_core import MANIFEST_SCHEMA_VERSION, RESULT_SCHEMA_VERSION, __version__
 from benchmark_core.manifest import load_manifest
 from benchmark_core.result import load_results
@@ -32,6 +33,10 @@ def _parser() -> argparse.ArgumentParser:
     inventory.add_argument("--dataset", required=True); inventory.add_argument("--receipt", action="append", required=True)
     bsbm = commands.add_parser("bsbm")
     bsbm_commands = bsbm.add_subparsers(dest="bsbm_command", required=True)
+    bsbm_hdt = bsbm_commands.add_parser("generate-hdt")
+    for option in ("source", "output", "rdf-receipt", "hdt-receipt", "inventory", "rdf2hdt"):
+        bsbm_hdt.add_argument(f"--{option}", required=True)
+    bsbm_hdt.add_argument("--source-triple-count", type=int, required=True)
     bsbm_prepare = bsbm_commands.add_parser("prepare")
     bsbm_source = bsbm_prepare.add_mutually_exclusive_group(required=True)
     bsbm_source.add_argument("--query-root")
@@ -98,6 +103,13 @@ def main(argv=None) -> int:
                 "result_schema_version": RESULT_SCHEMA_VERSION,
                 "commands": ["describe", "manifest validate", "results validate"],
             }, sort_keys=True))
+            return EXIT_SUCCESS
+        if args.command == "bsbm" and args.bsbm_command == "generate-hdt":
+            value = generate_bsbm_hdt(source=Path(args.source), output=Path(args.output),
+                rdf_receipt=Path(args.rdf_receipt), hdt_receipt=Path(args.hdt_receipt),
+                inventory=Path(args.inventory), rdf2hdt=Path(args.rdf2hdt),
+                source_triple_count=args.source_triple_count)
+            print(json.dumps({"written": args.output, "representation": value["representation"]}, sort_keys=True))
             return EXIT_SUCCESS
         if args.command == "bsbm" and args.bsbm_command == "run":
             records = run_bsbm(
