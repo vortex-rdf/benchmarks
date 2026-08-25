@@ -9,6 +9,7 @@ from DBBench.manifest import prepare as prepare_dbbench
 from BSBM.execution import run as run_bsbm
 from BSBM.manifest import prepare as prepare_bsbm
 from BSBM.hdt import generate as generate_bsbm_hdt
+from BSBM.cottas import generate as generate_bsbm_cottas
 from benchmark_core import MANIFEST_SCHEMA_VERSION, RESULT_SCHEMA_VERSION, __version__
 from benchmark_core.manifest import load_manifest
 from benchmark_core.result import load_results
@@ -37,6 +38,10 @@ def _parser() -> argparse.ArgumentParser:
     for option in ("source", "output", "rdf-receipt", "hdt-receipt", "inventory", "rdf2hdt"):
         bsbm_hdt.add_argument(f"--{option}", required=True)
     bsbm_hdt.add_argument("--source-triple-count", type=int, required=True)
+    bsbm_cottas = bsbm_commands.add_parser("generate-cottas")
+    for option in ("source", "output", "rdf-receipt", "cottas-receipt", "inventory"):
+        bsbm_cottas.add_argument(f"--{option}", required=True)
+    bsbm_cottas.add_argument("--source-triple-count", type=int, required=True)
     bsbm_prepare = bsbm_commands.add_parser("prepare")
     bsbm_source = bsbm_prepare.add_mutually_exclusive_group(required=True)
     bsbm_source.add_argument("--query-root")
@@ -109,6 +114,12 @@ def main(argv=None) -> int:
                 rdf_receipt=Path(args.rdf_receipt), hdt_receipt=Path(args.hdt_receipt),
                 inventory=Path(args.inventory), rdf2hdt=Path(args.rdf2hdt),
                 source_triple_count=args.source_triple_count)
+            print(json.dumps({"written": args.output, "representation": value["representation"]}, sort_keys=True))
+            return EXIT_SUCCESS
+        if args.command == "bsbm" and args.bsbm_command == "generate-cottas":
+            value = generate_bsbm_cottas(source=Path(args.source), output=Path(args.output),
+                rdf_receipt=Path(args.rdf_receipt), cottas_receipt=Path(args.cottas_receipt),
+                inventory=Path(args.inventory), source_triple_count=args.source_triple_count)
             print(json.dumps({"written": args.output, "representation": value["representation"]}, sort_keys=True))
             return EXIT_SUCCESS
         if args.command == "bsbm" and args.bsbm_command == "run":

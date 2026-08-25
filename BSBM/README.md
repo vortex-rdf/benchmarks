@@ -62,3 +62,24 @@ vortex-rdf-bench bsbm generate-hdt \
 The command writes the HDT file atomically. It then records its size, SHA-256 value, producer,
 and source RDF identity. The inventory references both `rdf/source` and `hdt/default`.
 All generated files remain under the ignored `BSBM/data/` directory.
+
+## Generate the COTTAS representation
+
+A COTTAS representation is the physical `cottas/default` form of the same logical RDF dataset.
+Use the pinned Python package `pycottas`, version `1.1.0`, with the `spo` index:
+
+```bash
+python -m pip install pycottas==1.1.0
+vortex-rdf-bench bsbm generate-cottas \
+  --source BSBM/data/explore-1k/dataset.nt \
+  --output BSBM/data/explore-1k/dataset.cottas \
+  --rdf-receipt BSBM/data/explore-1k/rdf-source-receipt.json \
+  --cottas-receipt BSBM/data/explore-1k/cottas-default-receipt.json \
+  --inventory BSBM/data/explore-1k/dataset-inventory.json \
+  --source-triple-count 374911
+```
+
+The command writes the COTTAS file atomically. It verifies the file with `pycottas`.
+It then records the file size, SHA-256 value, producer, and source RDF identity.
+The inventory preserves existing representations and adds `cottas/default`.
+All generated files remain under the ignored `BSBM/data/` directory.
