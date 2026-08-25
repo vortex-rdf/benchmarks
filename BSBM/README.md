@@ -35,4 +35,9 @@ The query-directory mode remains available through `--query-root` for manually p
 
 ## KROWN
 
+## Representation receipts
+
+Create `rdf/source`, `hdt/default`, `cottas/default`, and selected `vortex-rdf/<configuration>` receipts under `BSBM/data/explore-1k/`. Then create one inventory that references them. All receipts must retain the dataset hash from `generation-receipt.json`.
+
+
 Set `KROWN_BSBM_QUERY_STREAM`, `KROWN_BSBM_GENERATION_RECEIPT`, and `KROWN_RDF_DATASET_FILE`. KROWN imports and executes the artifacts. It does not generate them.

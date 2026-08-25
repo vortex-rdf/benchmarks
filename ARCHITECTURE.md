@@ -14,6 +14,11 @@ Each benchmark adapter validates its native input and converts it to the common 
 
 ### KROWN
 
+### Representation ownership
+
+This repository creates physical representations, receipts, and logical dataset inventories. A receipt binds file hashes to one source RDF identity. KROWN only verifies that contract and constructs its `DatasetArtifact`.
+
+
 KROWN invokes the public `vortex-rdf-bench` interface. It stages external datasets, collects measurements and declared artifacts, guards large workloads, and validates semantic baselines. KROWN does not contain DBBench or BSBM workload-generation rules.
 
 ## Enforced invariants

@@ -11,6 +11,7 @@ from BSBM.manifest import prepare as prepare_bsbm
 from benchmark_core import MANIFEST_SCHEMA_VERSION, RESULT_SCHEMA_VERSION, __version__
 from benchmark_core.manifest import load_manifest
 from benchmark_core.result import load_results
+from benchmark_core.representation import create_inventory, create_receipt, load_receipt
 
 EXIT_SUCCESS = 0
 EXIT_VALIDATION = 2
@@ -22,6 +23,13 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--version", action="version", version=__version__)
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("describe")
+    representation = commands.add_parser("representation")
+    representation_commands = representation.add_subparsers(dest="representation_command", required=True)
+    verify_receipt = representation_commands.add_parser("verify-receipt")
+    verify_receipt.add_argument("path")
+    inventory = representation_commands.add_parser("create-inventory")
+    inventory.add_argument("--output", required=True); inventory.add_argument("--benchmark", required=True)
+    inventory.add_argument("--dataset", required=True); inventory.add_argument("--receipt", action="append", required=True)
     bsbm = commands.add_parser("bsbm")
     bsbm_commands = bsbm.add_subparsers(dest="bsbm_command", required=True)
     bsbm_prepare = bsbm_commands.add_parser("prepare")
@@ -78,6 +86,11 @@ def _parser() -> argparse.ArgumentParser:
 def main(argv=None) -> int:
     args = _parser().parse_args(argv)
     try:
+        if args.command == "representation" and args.representation_command == "verify-receipt":
+            value = load_receipt(Path(args.path)); print(json.dumps({"valid": True, "representation": value["representation"]}, sort_keys=True)); return EXIT_SUCCESS
+        if args.command == "representation":
+            value = create_inventory(inventory_path=Path(args.output), benchmark=args.benchmark, dataset=args.dataset, receipt_paths=args.receipt)
+            print(json.dumps({"written": args.output, "representations": len(value["representations"])}, sort_keys=True)); return EXIT_SUCCESS
         if args.command == "describe":
             print(json.dumps({
                 "tool": "vortex-rdf-bench", "version": __version__,

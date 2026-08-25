@@ -43,6 +43,9 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the enforced boundary between externa
 
 ## Repository conventions
 
+Physical RDF forms use strict `rdf-representation-receipt-v1` receipts. One `rdf-dataset-inventory-v1` file can reference several receipts only when all receipts record the same source RDF identity. Generated files and receipts stay under ignored `data/` directories. KROWN verifies them but does not generate them.
+
+
 Each benchmark folder is self-contained:
 
 ```
