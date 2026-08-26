@@ -60,3 +60,7 @@ A committed result under `results/<run-id>/` must include the run manifest
 and summary files plus a short `RESULTS.md` recording hardware, OS, engine
 versions, dataset and scale, and any environment knobs — enough to reproduce
 the run from the benchmark README alone.
+
+## Experiment declarations
+
+Benchmark-owned experiment intent is stored under `<Benchmark>/experiments/`. The versioned `rdf-experiment-declaration-v1` contract binds a logical workload to representation receipts, system identities, an execution policy, and a semantic baseline reference. KROWN reads this declaration and owns runtime orchestration.

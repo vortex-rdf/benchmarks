@@ -1,0 +1,58 @@
+{
+  "schema": "rdf-experiment-declaration-v1",
+  "experiment": "bsbm/explore-1k/explore-smoke",
+  "benchmark": "bsbm",
+  "dataset": "explore-1k",
+  "workload": "bsbm-explore-smoke",
+  "inventory": "data/explore-1k/dataset-inventory.json",
+  "representations": {
+    "rdf/source": "data/explore-1k/rdf-source-receipt.json",
+    "hdt/default": "data/explore-1k/hdt-default-receipt.json",
+    "cottas/default": "data/explore-1k/cottas-default-receipt.json",
+    "vortex-rdf/simple-dictionary-native-rdf-store": "data/explore-1k/vortex-rdf-bootstrap-receipt.json"
+  },
+  "bindings": [
+    {
+      "system": "fuseki/default",
+      "representation": "rdf/source"
+    },
+    {
+      "system": "virtuoso/default",
+      "representation": "rdf/source"
+    },
+    {
+      "system": "qlever/default",
+      "representation": "rdf/source"
+    },
+    {
+      "system": "oxigraph/memory",
+      "representation": "rdf/source"
+    },
+    {
+      "system": "oxigraph/rocksdb",
+      "representation": "rdf/source"
+    },
+    {
+      "system": "comunica/hdt",
+      "representation": "hdt/default"
+    },
+    {
+      "system": "pycottas/default",
+      "representation": "cottas/default"
+    },
+    {
+      "system": "vortex-rdf/simple-dictionary-native-rdf-store",
+      "representation": "vortex-rdf/simple-dictionary-native-rdf-store"
+    },
+    {
+      "system": "rdflib/default",
+      "representation": "rdf/source"
+    }
+  ],
+  "execution_policy": {
+    "warmup_runs": 0,
+    "measured_runs": 1,
+    "timeout_s": 60.0
+  },
+  "semantic_baseline": "baselines/explore-1k-smoke.json"
+}

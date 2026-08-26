@@ -37,3 +37,7 @@ Run the audit with:
 ```bash
 python -m unittest tests.test_architecture -v
 ```
+
+### Experiment intent
+
+This repository owns versioned experiment declarations. A declaration selects the benchmark, logical dataset, workload, representation receipts, target system identities, execution policy, and semantic baseline. KROWN validates and executes the declaration through benchmark-neutral contracts.
