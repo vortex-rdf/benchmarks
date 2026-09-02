@@ -41,3 +41,7 @@ python -m unittest tests.test_architecture -v
 ### Experiment intent
 
 This repository owns versioned experiment declarations. A declaration selects the benchmark, logical dataset, workload, representation receipts, target system identities, execution policy, and semantic baseline. KROWN validates and executes the declaration through benchmark-neutral contracts.
+
+## Semantic baseline ownership
+
+`semantic_baseline` is optional in benchmark-owned experiment declarations. Use it only for a baseline artifact owned and distributed by this repository. KROWN scenario baselines remain KROWN-owned and must not appear as broken benchmark-relative paths.

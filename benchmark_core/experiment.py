@@ -16,8 +16,10 @@ def _relative(value: Any, field: str) -> str:
 def validate_experiment_declaration(value: Mapping[str, Any]) -> dict[str, Any]:
     if not isinstance(value, Mapping): raise TypeError("experiment declaration must be an object")
     result = dict(value)
-    required={"schema","experiment","benchmark","dataset","workload","inventory","representations","bindings","execution_policy","semantic_baseline"}
-    if set(result)!=required: raise ValueError("experiment declaration has unexpected fields")
+    required={"schema","experiment","benchmark","dataset","workload","inventory","representations","bindings","execution_policy"}
+    optional={"semantic_baseline"}
+    fields=set(result)
+    if not required.issubset(fields) or fields.difference(required|optional): raise ValueError("experiment declaration has unexpected fields")
     if result["schema"]!=SCHEMA: raise ValueError("unsupported experiment declaration schema")
     for field in ("experiment","benchmark","dataset","workload"): _identifier(result[field],field)
     _relative(result["inventory"],"inventory")
@@ -38,7 +40,7 @@ def validate_experiment_declaration(value: Mapping[str, Any]) -> dict[str, Any]:
     if not isinstance(policy["warmup_runs"],int) or policy["warmup_runs"]<0: raise ValueError("warmup_runs must be non-negative")
     if not isinstance(policy["measured_runs"],int) or policy["measured_runs"]<1: raise ValueError("measured_runs must be positive")
     if not isinstance(policy["timeout_s"],(int,float)) or isinstance(policy["timeout_s"],bool) or policy["timeout_s"]<=0: raise ValueError("timeout_s must be positive")
-    _relative(result["semantic_baseline"],"semantic_baseline")
+    if "semantic_baseline" in result: _relative(result["semantic_baseline"],"semantic_baseline")
     json.dumps(result,sort_keys=True,allow_nan=False)
     return result
 def load_experiment_declaration(path: str|Path) -> dict[str,Any]:

@@ -63,4 +63,4 @@ the run from the benchmark README alone.
 
 ## Experiment declarations
 
-Benchmark-owned experiment intent is stored under `<Benchmark>/experiments/`. The versioned `rdf-experiment-declaration-v1` contract binds a logical workload to representation receipts, system identities, an execution policy, and a semantic baseline reference. KROWN reads this declaration and owns runtime orchestration.
+Benchmark-owned experiment intent is stored under `<Benchmark>/experiments/`. The versioned `rdf-experiment-declaration-v1` contract binds a logical workload to representation receipts, system identities, and an execution policy. An optional `semantic_baseline` path can express benchmark-owned baseline intent. KROWN owns runtime orchestration and selects orchestration-owned baselines in scenario configuration.

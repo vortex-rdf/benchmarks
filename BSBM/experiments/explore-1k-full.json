@@ -58,6 +58,5 @@
     "vortex-rdf/dictionary-secondary-by-reference": "data/explore-1k/vortex-rdf-dictionary-secondary-by-reference-receipt.json"
   },
   "schema": "rdf-experiment-declaration-v1",
-  "semantic_baseline": "baselines/explore-1k-smoke.json",
   "workload": "bsbm-explore-full"
 }

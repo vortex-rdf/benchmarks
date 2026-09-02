@@ -67,6 +67,8 @@ vortex-rdf-bench manifest validate \
 
 KROWN integration is optional. KROWN can import benchmark-owned manifests and receipts, but BSBM preparation and RDFLib execution do not import or invoke KROWN.
 
+The committed smoke and full declarations do not reference a semantic baseline. KROWN owns its current 11-query smoke baseline and selects it in scenario configuration. Add `semantic_baseline` to a benchmark declaration only when this repository owns the referenced artifact.
+
 ## Representation receipts
 
 Create `rdf/source`, `hdt/default`, `cottas/default`, and selected `vortex-rdf/<configuration>` receipts under `BSBM/data/explore-1k/`. Then create one inventory that references them. All receipts must retain the dataset hash from `generation-receipt.json`.
