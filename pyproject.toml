@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = {file = "LICENSE"}
 authors = [{name = "Vortex RDF"}]
-dependencies = []
+dependencies = ["rdflib==7.6.0"]
 
 [project.scripts]
 vortex-rdf-bench = "benchmark_core.cli:main"
