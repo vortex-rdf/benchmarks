@@ -33,14 +33,43 @@ vortex-rdf-bench bsbm prepare \
 
 The query-directory mode remains available through `--query-root` for manually prepared workloads.
 
-## KROWN
+## Install and run without KROWN
+
+The standalone unit is the `vortex-rdf-benchmarks` Python distribution. It owns `benchmark_core`, `BSBM`, and `DBBench`. Install it from the repository root. Do not add repository paths to `sys.path`.
+
+```bash
+cd /path/to/benchmarks
+python -m pip install --editable .
+```
+
+Test the installed command from outside the repository and without `PYTHONPATH`:
+
+```bash
+cd /tmp
+env -u PYTHONPATH vortex-rdf-bench describe
+```
+
+Prepare and validate a BSBM smoke manifest:
+
+```bash
+BENCHMARKS=/path/to/benchmarks
+vortex-rdf-bench bsbm prepare \
+  --query-stream "$BENCHMARKS/BSBM/data/explore-1k/explore.csv" \
+  --generation-receipt "$BENCHMARKS/BSBM/data/explore-1k/generation-receipt.json" \
+  --dataset-path "$BENCHMARKS/BSBM/data/explore-1k/dataset.nt" \
+  --selection smoke \
+  --output "$BENCHMARKS/BSBM/data/explore-1k/standalone-smoke-manifest.json" \
+  --dataset bsbm-explore-1k \
+  --workload bsbm-explore-smoke
+vortex-rdf-bench manifest validate \
+  "$BENCHMARKS/BSBM/data/explore-1k/standalone-smoke-manifest.json"
+```
+
+KROWN integration is optional. KROWN can import benchmark-owned manifests and receipts, but BSBM preparation and RDFLib execution do not import or invoke KROWN.
 
 ## Representation receipts
 
 Create `rdf/source`, `hdt/default`, `cottas/default`, and selected `vortex-rdf/<configuration>` receipts under `BSBM/data/explore-1k/`. Then create one inventory that references them. All receipts must retain the dataset hash from `generation-receipt.json`.
-
-
-Set `KROWN_BSBM_QUERY_STREAM`, `KROWN_BSBM_GENERATION_RECEIPT`, and `KROWN_RDF_DATASET_FILE`. KROWN imports and executes the artifacts. It does not generate them.
 
 ## Generate the HDT representation
 
@@ -90,18 +119,20 @@ The bootstrap configuration uses the unified native RDF store. It uses a simple 
 Build the CLI from the pinned Vortex-RDF commit, then generate the artifact:
 
 ```bash
-cd /users/u0182905/vortex-rdf
+VORTEX_RDF=/path/to/vortex-rdf
+BENCHMARKS=/path/to/benchmarks
+cd "$VORTEX_RDF"
 cargo build --release -p vortex-rdf-cli
 
-cd /users/u0182905/benchmarks
+cd "$BENCHMARKS"
 vortex-rdf-bench bsbm generate-vortex-rdf \
   --source BSBM/data/explore-1k/dataset.nt \
   --output BSBM/data/explore-1k/dataset-bootstrap.vortex \
   --rdf-receipt BSBM/data/explore-1k/rdf-source-receipt.json \
   --vortex-receipt BSBM/data/explore-1k/vortex-rdf-bootstrap-receipt.json \
   --inventory BSBM/data/explore-1k/dataset-inventory.json \
-  --vortex-cli /users/u0182905/vortex-rdf/target/release/vortex-rdf-cli \
-  --vortex-repository /users/u0182905/vortex-rdf \
+  --vortex-cli "$VORTEX_RDF/target/release/vortex-rdf-cli" \
+  --vortex-repository "$VORTEX_RDF" \
   --source-triple-count 374911
 ```
 
