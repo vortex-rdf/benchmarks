@@ -206,3 +206,29 @@ comparison, and a short `RESULTS.md` recording hardware, OS, engine
 versions, dataset size, and any environment knobs) into
 `DBBench/results/<run-id>/`. Raw per-run files can stay in `runs/` locally;
 only committed results are considered citable.
+
+
+## Public manifest preparation
+
+The repository provides one stable command for standalone use and KROWN integration:
+
+```bash
+vortex-rdf-bench dbbench prepare \
+  --inventory DBBench/runs/dbbench.queries.json \
+  --dataset dbpedia \
+  --output DBBench/runs/dbbench.manifest.json
+```
+
+The command also accepts `--query-root`, `--groups`, `--join-sizes`, and an optional
+`--query-id-file`. It writes a versioned manifest atomically and records source provenance.
+KROWN must call this public command instead of implementing DBBench workload rules itself.
+
+
+## RDFLib execution
+
+```bash
+vortex-rdf-bench dbbench run --manifest manifest.json --dataset-path data.ttl \
+  --output results.jsonl --experiment-id example
+```
+
+The command writes validated, versioned JSONL records atomically. Use `--resume` to keep completed runs.
