@@ -27,6 +27,10 @@
     },
     {
       "representation": "hdt/default",
+      "system": "hdt-rdflib/optimized-in-memory"
+    },
+    {
+      "representation": "hdt/default",
       "system": "comunica/hdt"
     },
     {
