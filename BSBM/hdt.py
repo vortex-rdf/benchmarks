@@ -26,7 +26,7 @@ def _create_index(hdt_path: Path) -> Path:
     code = (
         "import sys; from rdflib_hdt import HDTStore; "
         "store=HDTStore(sys.argv[1], mapped=True, indexed=True, safe_mode=True); "
-        "assert len(store) >= 0; del store"
+        "assert store.__len__(None) >= 0; store.close()"
     )
     subprocess.run([str(_index_python()), "-c", code, str(hdt_path)], check=True)
     if not index.is_file() or index.stat().st_size == 0:
