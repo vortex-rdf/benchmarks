@@ -140,3 +140,8 @@ vortex-rdf-bench bsbm generate-vortex-rdf \
 
 The physical representation identifier is `vortex-rdf/simple-dictionary-native-rdf-store`.
 The receipt records the Vortex-RDF commit, release binary hash, index type, storage layout, command, and source identity.
+
+
+## Manual query-flavour skips
+
+Use `execution_policy.manual_query_flavour_skips` for explicit per-system omissions. KROWN emits visible `status=skipped` records with policy provenance. Use `--force-include` to execute all attempts. The global manifest stays unchanged.
