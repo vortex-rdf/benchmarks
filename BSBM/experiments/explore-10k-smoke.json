@@ -3,7 +3,11 @@
   "bindings": [
     {
       "representation": "rdf/source",
-      "system": "fuseki/default"
+      "system": "fuseki/memory"
+    },
+    {
+      "representation": "rdf/source",
+      "system": "fuseki/tdb2"
     },
     {
       "representation": "rdf/source",
@@ -44,20 +48,20 @@
   ],
   "dataset": "explore-10k",
   "execution_policy": {
-    "measured_runs": 1,
-    "timeout_s": 60.0,
-    "warmup_runs": 0,
     "manual_query_flavour_skips": [
       {
-        "system": "pycottas/default",
         "bsbm_template_ids": [
           "5",
           "10"
         ],
         "policy_id": "cottas-bsbm-10k-known-timeouts-v1",
-        "reason": "Known 60-second timeout in the validated BSBM 10k smoke run; keep the omission visible"
+        "reason": "Known 60-second timeout in the validated BSBM 10k smoke run; keep the omission visible",
+        "system": "pycottas/default"
       }
-    ]
+    ],
+    "measured_runs": 1,
+    "timeout_s": 60.0,
+    "warmup_runs": 0
   },
   "experiment": "bsbm/explore-10k/explore-smoke",
   "inventory": "data/explore-10k/dataset-inventory.json",
