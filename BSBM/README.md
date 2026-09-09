@@ -90,8 +90,14 @@ vortex-rdf-bench bsbm generate-hdt \
   --source-triple-count 374911
 ```
 
-The command writes the HDT file atomically. It then records its size, SHA-256 value, producer,
-and source RDF identity. The inventory references both `rdf/source` and `hdt/default`.
+The Rust `rdf2hdt` 0.2.0 implementation creates `dataset.hdt`. A pinned
+`rdflib-hdt` 3.3 runtime then creates `dataset.hdt.index.v1-1`. Set
+`KROWN_HDT_INDEX_PYTHON` to that runtime's Python executable. The complete build
+command measures both phases as one query-ready representation build.
+
+The command publishes the HDT file and side index together. The receipt records
+both file sizes and SHA-256 values. Persistent representation size is the sum of
+both files. Query execution must not create or modify the side index.
 All generated files remain under the ignored `BSBM/data/` directory.
 
 ## Generate the COTTAS representation

@@ -29,6 +29,10 @@ VORTEX_RDF = Path("/users/u0182905/vortex-rdf")
 VORTEX_RDFLIB = Path("/users/u0182905/vortex-rdflib")
 RDF2HDT = BENCHMARKS / "BSBM/data/tools/rdf2hdt-0.2.0/bin/rdf2hdt"
 VORTEX_CLI = VORTEX_RDF / "target/release/vortex-rdf-cli"
+HDT_INDEX_PYTHON = Path(os.environ.get(
+    "KROWN_HDT_INDEX_PYTHON",
+    "/users/u0182905/KROWN/.runtime/rdflib-hdt-3.3/bin/python",
+)).expanduser().resolve()
 
 
 def utc_now() -> str:
@@ -259,7 +263,8 @@ def preflight(source: Path) -> None:
     for path, label in ((BENCHMARKS, "benchmarks repository"),
                         (VORTEX_RDF, "Vortex-RDF repository"),
                         (VORTEX_RDFLIB, "vortex-rdflib repository"),
-                        (RDF2HDT, "rdf2hdt 0.2.0 binary")):
+                        (RDF2HDT, "rdf2hdt 0.2.0 binary"),
+                        (HDT_INDEX_PYTHON, "pinned rdflib-hdt 3.3 Python")):
         if not path.exists(): errors.append(f"missing {label}: {path}")
     if not source.is_file(): errors.append(f"missing source RDF: {source}")
     if shutil.which("vortex-rdf-bench") is None:
@@ -321,6 +326,7 @@ def main() -> int:
         atomic_json(ledger_path, ledger)
 
         hdt = output_dir / "dataset.hdt"
+        hdt_index = output_dir / "dataset.hdt.index.v1-1"
         hdt_receipt = output_dir / "hdt-default-receipt.json"
         ledger["stages"].append(run_stage(
             "hdt/default",
@@ -328,7 +334,8 @@ def main() -> int:
              "--output", str(hdt), "--rdf-receipt", str(rdf_receipt),
              "--hdt-receipt", str(hdt_receipt), "--inventory", str(inventory),
              "--rdf2hdt", str(RDF2HDT), "--source-triple-count", str(args.triple_count)],
-            logs / "hdt.log", [hdt], hdt_receipt, args.resume,
+            logs / "hdt.log", [hdt, hdt_index], hdt_receipt, args.resume,
+            env={**os.environ, "KROWN_HDT_INDEX_PYTHON": str(HDT_INDEX_PYTHON)},
         )); atomic_json(ledger_path, ledger)
 
         cottas = output_dir / "dataset.cottas"

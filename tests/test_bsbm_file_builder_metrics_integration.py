@@ -43,6 +43,29 @@ class FileBuilderMetricsIntegrationTests(unittest.TestCase):
         self.assertEqual(stored["producer"]["representation_size"]["logical_bytes"], 3)
         self.assertNotIn("serialization_timing", stored["producer"])
 
+    def test_success_sums_a_multi_file_representation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            first = root / "dataset.hdt"
+            second = root / "dataset.hdt.index.v1-1"
+            receipt = root / "receipt.json"
+            command = [
+                sys.executable, "-c",
+                "from pathlib import Path; Path('dataset.hdt').write_bytes(b'hdt'); Path('dataset.hdt.index.v1-1').write_bytes(b'index')",
+            ]
+
+            def receipt_writer():
+                MODULE.atomic_json(receipt, {"producer": {"tool": "test"}})
+
+            result = MODULE.run_stage(
+                "hdt/default", command, root / "build.log", [first, second],
+                receipt, False, cwd=root, after=receipt_writer,
+            )
+            stored = json.loads(receipt.read_text(encoding="utf-8"))
+        self.assertEqual(result["representation_size"]["logical_bytes"], 8)
+        self.assertEqual(result["representation_size"]["file_count"], 2)
+        self.assertEqual(stored["producer"]["representation_size"]["logical_bytes"], 8)
+
     def test_failure_preserves_metrics_without_claiming_oom(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

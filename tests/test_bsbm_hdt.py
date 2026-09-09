@@ -1,7 +1,10 @@
 import json
+import os
+import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 from BSBM.hdt import generate, verify
 from benchmark_core.representation import create_receipt
 
@@ -14,11 +17,19 @@ class BsbmHdtTests(unittest.TestCase):
                 representation="rdf/source", files=["dataset.nt"], producer={"kind":"test"},
                 created_at_utc="2026-08-25T00:00:00Z")
             tool=root/"rdf2hdt"; tool.write_text("#!/bin/sh\nset -eu\n[ \"$1\" = \"convert\" ]\n[ \"$2\" = \"--input\" ]\n[ \"$4\" = \"--output\" ]\ncp -- \"$3\" \"$5\"\n"); tool.chmod(0o755)
-            value=generate(source=source, output=root/"dataset.hdt",
-                rdf_receipt=root/"rdf-source-receipt.json",
-                hdt_receipt=root/"hdt-default-receipt.json", inventory=root/"dataset-inventory.json",
-                rdf2hdt=tool, source_triple_count=1)
+            index_python=root/"index-python"; index_python.write_text(
+                "#!/bin/sh\nset -eu\n[ \"$1\" = \"-c\" ]\n"
+                "cp -- \"$3\" \"$3.index.v1-1\"\n"
+            ); index_python.chmod(0o755)
+            with patch.dict(os.environ, {"KROWN_HDT_INDEX_PYTHON": str(index_python)}):
+                value=generate(source=source, output=root/"dataset.hdt",
+                    rdf_receipt=root/"rdf-source-receipt.json",
+                    hdt_receipt=root/"hdt-default-receipt.json", inventory=root/"dataset-inventory.json",
+                    rdf2hdt=tool, source_triple_count=1)
             self.assertEqual(value, verify(receipt=root/"hdt-default-receipt.json"))
+            self.assertTrue((root/"dataset.hdt.index.v1-1").is_file())
+            self.assertEqual([item["path"] for item in value["files"]],
+                             ["dataset.hdt", "dataset.hdt.index.v1-1"])
             inventory=json.loads((root/"dataset-inventory.json").read_text())
             self.assertEqual([x["representation"] for x in inventory["representations"]],
                              ["rdf/source", "hdt/default"])
