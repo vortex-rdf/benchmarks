@@ -3,7 +3,7 @@
   "bindings": [
     {
       "representation": "rdf/source",
-      "system": "fuseki/default"
+      "system": "fuseki/memory"
     },
     {
       "representation": "rdf/source",
