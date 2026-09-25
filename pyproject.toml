@@ -16,4 +16,4 @@ dependencies = ["rdflib==7.6.0"]
 vortex-rdf-bench = "benchmark_core.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["benchmark_core*", "DBBench*", "BSBM*"]
+include = ["benchmark_core*", "DBBench*", "BSBM*", "WatDiv*"]

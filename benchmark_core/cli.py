@@ -11,6 +11,7 @@ from BSBM.manifest import prepare as prepare_bsbm
 from BSBM.hdt import generate as generate_bsbm_hdt
 from BSBM.cottas import generate as generate_bsbm_cottas
 from BSBM.vortex_rdf import generate as generate_bsbm_vortex_rdf
+from WatDiv.manifest import DATASET_DECLARATIONS, prepare as prepare_watdiv
 from benchmark_core import MANIFEST_SCHEMA_VERSION, RESULT_SCHEMA_VERSION, __version__
 from benchmark_core.manifest import load_manifest
 from benchmark_core.result import load_results
@@ -66,6 +67,25 @@ def _parser() -> argparse.ArgumentParser:
     bsbm_run.add_argument("--measured-runs", type=int, default=5)
     bsbm_run.add_argument("--timeout-s", type=float, default=60.0)
     bsbm_run.add_argument("--resume", action="store_true")
+    watdiv = commands.add_parser("watdiv")
+    watdiv_commands = watdiv.add_subparsers(dest="watdiv_command", required=True)
+    watdiv_prepare = watdiv_commands.add_parser("prepare")
+    watdiv_prepare.add_argument("--dataset", required=True,
+        choices=tuple(DATASET_DECLARATIONS))
+    watdiv_prepare.add_argument("--output", required=True)
+    watdiv_prepare.add_argument("--dataset-path")
+    watdiv_prepare.add_argument("--workload-root")
+    watdiv_prepare.add_argument("--workload")
+    watdiv_prepare.add_argument("--expected-count", type=int, default=12400)
+    run_command = watdiv_commands.add_parser("run")
+    run_command.add_argument("--manifest", required=True)
+    run_command.add_argument("--dataset-path", required=True)
+    run_command.add_argument("--output", required=True)
+    run_command.add_argument("--experiment-id", required=True)
+    run_command.add_argument("--warmup-runs", type=int, default=1)
+    run_command.add_argument("--measured-runs", type=int, default=5)
+    run_command.add_argument("--timeout-s", type=float, default=60.0)
+    run_command.add_argument("--resume", action="store_true")
     dbbench = commands.add_parser("dbbench")
     dbbench_commands = dbbench.add_subparsers(dest="dbbench_command", required=True)
     prepare = dbbench_commands.add_parser("prepare")
@@ -151,6 +171,17 @@ def main(argv=None) -> int:
                 dataset_path=Path(args.dataset_path) if args.dataset_path else None,
                 selection=args.selection, output=Path(args.output),
                 workload=args.workload, dataset=args.dataset,
+            )
+            print(json.dumps({"written": args.output, "queries": len(manifest["queries"])}, sort_keys=True))
+            return EXIT_SUCCESS
+        if args.command == "watdiv" and args.watdiv_command == "prepare":
+            manifest = prepare_watdiv(
+                output=Path(args.output),
+                dataset=args.dataset,
+                dataset_path=Path(args.dataset_path) if args.dataset_path else None,
+                workload_root=Path(args.workload_root) if args.workload_root else None,
+                workload=args.workload,
+                expected_count=args.expected_count,
             )
             print(json.dumps({"written": args.output, "queries": len(manifest["queries"])}, sort_keys=True))
             return EXIT_SUCCESS

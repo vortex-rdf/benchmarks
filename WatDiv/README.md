@@ -1,6 +1,6 @@
 # WatDiv — Waterloo SPARQL Diversity Test Suite
 
-> **Status: planned** — no setup or results yet.
+> **Status: adapter support is in place** — public manifest preparation is implemented and validated against local WatDiv stress workloads.
 
 [WatDiv](https://dsg.uwaterloo.ca/watdiv/) (Aluç et al., University of
 Waterloo) is a synthetic benchmark designed to cover a much wider range of
@@ -15,6 +15,28 @@ what the store implements natively: triple-pattern matching and BGP joins.
   random placeholders; plus extended stress-test workloads.
 - **Tooling**: C++ data/query generator, available from the project page or
   [github.com/dsg-uwaterloo/watdiv](https://github.com/dsg-uwaterloo/watdiv).
+
+## Supported setup
+
+Use the shared public CLI to prepare a WatDiv manifest from the native stress workload files staged locally under ignored `WatDiv/data/`:
+
+```bash
+python -m benchmark_core.cli watdiv prepare --dataset watdiv-10m --output /tmp/watdiv-10m.json
+```
+
+The adapter validates:
+
+- native `.sparql` + `.desc` stream integrity and permutation correctness,
+- warmup versus measured stream ordering,
+- stable native query IDs and query hashing,
+- workload provenance and manifest schema compliance,
+- official catalog digests for the local WatDiv workloads.
+
+The query hash is SHA-256 over the exact UTF-8 bytes of each physical SPARQL
+line after removing only its line terminator. The catalog input is numeric
+native-ID order, with `<id><TAB><query_sha256>` rows joined by one LF byte and
+no final LF byte. The independent comparison diagnostic is
+`python -m WatDiv.validate_watdiv_catalog_alignment_v1`.
 
 ## Planned setup
 

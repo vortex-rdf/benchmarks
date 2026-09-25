@@ -22,7 +22,7 @@ say so in their READMEs.
 | Benchmark | Workload | Status |
 |---|---|---|
 | [DBBench](DBBench/) | DBpedia triple-pattern + join workload from the pycottas experiments | **runnable** (migrated from `vortex-rdf/scripts/DBBench`) |
-| [WatDiv](WatDiv/) | Synthetic, structurally diverse BGPs (linear/star/snowflake/complex) | planned |
+| [WatDiv](WatDiv/) | Synthetic, structurally diverse BGPs (linear/star/snowflake/complex) | adapter ready |
 | [WDBench](WDBench/) | Real Wikidata data (~1.25B triples) + real query-log patterns and paths | planned |
 | [BSBM](BSBM/) | E-commerce query mixes; broad SPARQL feature coverage | **adapter ready** |
 | [LUBM](LUBM/) | University domain; classic 14-query set, inference-oriented | planned |
