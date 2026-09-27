@@ -12,6 +12,12 @@ from BSBM.hdt import generate as generate_bsbm_hdt
 from BSBM.cottas import generate as generate_bsbm_cottas
 from BSBM.vortex_rdf import generate as generate_bsbm_vortex_rdf
 from WatDiv.manifest import DATASET_DECLARATIONS, prepare as prepare_watdiv
+from WatDiv.representations import (
+    REPRESENTATION_TYPES,
+    build as build_watdiv_representation,
+    inspect as inspect_watdiv_representation,
+    validate as validate_watdiv_representation,
+)
 from benchmark_core import MANIFEST_SCHEMA_VERSION, RESULT_SCHEMA_VERSION, __version__
 from benchmark_core.manifest import load_manifest
 from benchmark_core.result import load_results
@@ -77,6 +83,23 @@ def _parser() -> argparse.ArgumentParser:
     watdiv_prepare.add_argument("--workload-root")
     watdiv_prepare.add_argument("--workload")
     watdiv_prepare.add_argument("--expected-count", type=int, default=12400)
+    watdiv_representation = watdiv_commands.add_parser("representation")
+    watdiv_representation_commands = watdiv_representation.add_subparsers(
+        dest="watdiv_representation_command", required=True
+    )
+    for command_name in ("build", "validate", "inspect"):
+        command = watdiv_representation_commands.add_parser(command_name)
+        command.add_argument("--dataset", required=True, choices=tuple(DATASET_DECLARATIONS))
+        command.add_argument("--representation", required=True, choices=REPRESENTATION_TYPES)
+        command.add_argument("--output-root")
+        if command_name == "build":
+            command.add_argument("--force", action="store_true")
+            command.add_argument("--source-path")
+            command.add_argument("--rdf2hdt")
+            command.add_argument("--hdt-index-python")
+            command.add_argument("--vortex-cli")
+            command.add_argument("--vortex-repository")
+            command.add_argument("--log-dir")
     run_command = watdiv_commands.add_parser("run")
     run_command.add_argument("--manifest", required=True)
     run_command.add_argument("--dataset-path", required=True)
@@ -184,6 +207,30 @@ def main(argv=None) -> int:
                 expected_count=args.expected_count,
             )
             print(json.dumps({"written": args.output, "queries": len(manifest["queries"])}, sort_keys=True))
+            return EXIT_SUCCESS
+        if args.command == "watdiv" and args.watdiv_command == "representation":
+            if args.watdiv_representation_command == "inspect":
+                value = inspect_watdiv_representation(
+                    args.dataset, args.representation, args.output_root
+                )
+            elif args.watdiv_representation_command == "validate":
+                value = validate_watdiv_representation(
+                    args.dataset, args.representation, args.output_root
+                )
+            else:
+                value = build_watdiv_representation(
+                    dataset=args.dataset,
+                    representation=args.representation,
+                    output_root=args.output_root,
+                    force=args.force,
+                    source_path=args.source_path,
+                    rdf2hdt=args.rdf2hdt,
+                    hdt_index_python=args.hdt_index_python,
+                    vortex_cli=args.vortex_cli,
+                    vortex_repository=args.vortex_repository,
+                    log_dir=args.log_dir,
+                )
+            print(json.dumps(value, sort_keys=True))
             return EXIT_SUCCESS
         if args.command == "dbbench" and args.dbbench_command == "run":
             records = run_dbbench(

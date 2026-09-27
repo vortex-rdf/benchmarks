@@ -9,7 +9,7 @@ class ArchitectureAuditTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[1]
         report = audit_repository(root)
         self.assertEqual(report['schema'], 'rdf-benchmark-architecture-audit-v1')
-        self.assertEqual(report['benchmarks'], ['dbbench', 'bsbm'])
+        self.assertEqual(report['benchmarks'], ['dbbench', 'bsbm', 'watdiv'])
         self.assertEqual(report['shared_execution_wrappers'], {
             'dbbench': True,
             'bsbm': True,

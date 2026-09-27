@@ -5,7 +5,7 @@ import ast
 from pathlib import Path
 from typing import Any
 
-BENCHMARKS = ('DBBench', 'BSBM')
+BENCHMARKS = ('DBBench', 'BSBM', 'WatDiv')
 
 
 def _imports_shared_runner(path: Path) -> bool:
@@ -26,13 +26,14 @@ def audit_repository(root: Path) -> dict[str, Any]:
         'benchmark_core/rdf_execution.py', 'benchmark_core/atomic_io.py',
         'DBBench/manifest.py', 'DBBench/execution.py', 'DBBench/README.md',
         'BSBM/manifest.py', 'BSBM/execution.py', 'BSBM/README.md',
+        'WatDiv/manifest.py', 'WatDiv/representations.py', 'WatDiv/README.md',
     ]
     missing = [path for path in required if not (root / path).is_file()]
     if missing:
         raise ValueError('Missing architecture files: ' + ', '.join(missing))
 
     wrappers = {}
-    for benchmark in BENCHMARKS:
+    for benchmark in BENCHMARKS[:2]:
         execution = root / benchmark / 'execution.py'
         wrappers[benchmark.lower()] = _imports_shared_runner(execution)
         if not wrappers[benchmark.lower()]:
@@ -44,7 +45,7 @@ def audit_repository(root: Path) -> dict[str, Any]:
             raise ValueError(f'Missing Git-ignore rule: {pattern}')
 
     pyproject = (root / 'pyproject.toml').read_text(encoding='utf-8')
-    for package in ('benchmark_core*', 'DBBench*', 'BSBM*'):
+    for package in ('benchmark_core*', 'DBBench*', 'BSBM*', 'WatDiv*'):
         if package not in pyproject:
             raise ValueError(f'pyproject.toml does not package {package}')
 
@@ -65,7 +66,7 @@ def audit_repository(root: Path) -> dict[str, Any]:
     return {
         'schema': 'rdf-benchmark-architecture-audit-v1',
         'repository_role': 'benchmark-semantics-and-adapters',
-        'benchmarks': ['dbbench', 'bsbm'],
+        'benchmarks': ['dbbench', 'bsbm', 'watdiv'],
         'shared_execution_wrappers': wrappers,
         'external_assets_ignored': True,
         'atomic_publication': True,

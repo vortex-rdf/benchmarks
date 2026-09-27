@@ -38,6 +38,53 @@ native-ID order, with `<id><TAB><query_sha256>` rows joined by one LF byte and
 no final LF byte. The independent comparison diagnostic is
 `python -m WatDiv.validate_watdiv_catalog_alignment_v1`.
 
+## Representation builds
+
+The adapter supports HDT, COTTAS, and two explicit Vortex-RDF
+representations for both declared datasets. The Vortex configurations both use
+the dictionary layout and differ only in their secondary-index strategy:
+`vortex-by-reference` uses `secondary-by-reference`, while `vortex-by-copy`
+uses `secondary-by-copy`. The unindexed opaque-string layout is out of scope. Source N-Triples remain local and
+ignored under `WatDiv/data/`; generated artifacts, receipts, and logs are also
+kept outside Git under `WatDiv/data/generated/` and the configured log path.
+
+Required local tools are the pinned `rdf2hdt 0.2.0` binary, `pycottas 1.1.0`,
+the pinned `rdflib-hdt` index Python selected by `KROWN_HDT_INDEX_PYTHON`, and
+the Vortex-RDF release CLI. The exact commands are verified from the installed
+tool help. Vortex builds use `RUST_LOG=vortex_rdf_cli=debug,vortex_rdf_core=debug`.
+
+Inspect, build, and validate one representation at a time:
+
+```bash
+python -m benchmark_core.cli watdiv representation inspect \
+   --dataset watdiv-10m --representation hdt
+python -m benchmark_core.cli watdiv representation build \
+   --dataset watdiv-10m --representation hdt
+python -m benchmark_core.cli watdiv representation validate \
+   --dataset watdiv-10m --representation hdt
+
+RUST_LOG=vortex_rdf_cli=debug,vortex_rdf_core=debug \
+python -m benchmark_core.cli watdiv representation build \
+   --dataset watdiv-10m --representation vortex-by-copy
+```
+
+Use `--force` only for an explicit rebuild. A complete existing output is
+otherwise refused. Builds use a same-filesystem temporary directory, validate
+the temporary artifact and receipt, then promote the complete directory
+atomically. Ordinary failures remove temporary output; interrupted or partial
+directories do not replace a completed representation.
+
+Receipts use the shared `rdf-representation-receipt-v1` contract and include
+source identity, output hashes, builder identity, build metrics, validation
+duration, peak process-tree RSS, and the command log. Build time, validation
+time, load time, and query time are separate concepts. Source SHA-256 is
+computed when the source receipt is created; no source hash is fabricated or
+silently omitted.
+
+The CLI builds exactly one dataset/representation per invocation. This job
+does not execute the WatDiv query workload. Large real builds are operational
+actions and are not run by the unit-test suite.
+
 ## Planned setup
 
 1. Build the WatDiv generator; generate data at one or more scale factors
