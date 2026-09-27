@@ -1,10 +1,4 @@
-"""WatDiv execution support is intentionally out of scope for this patch."""
+"""Use the shared RDFLib execution path for WatDiv."""
+from benchmark_core.rdf_execution import QueryTimeoutError, execute_query, run
 
-from __future__ import annotations
-
-
-def run(*args, **kwargs):
-    raise NotImplementedError(
-        "WatDiv execution is intentionally not implemented in this patch; "
-        "this adapter prepares the official workload manifest only."
-    )
+__all__ = ['QueryTimeoutError', 'execute_query', 'run']

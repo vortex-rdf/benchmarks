@@ -11,6 +11,7 @@ from BSBM.manifest import prepare as prepare_bsbm
 from BSBM.hdt import generate as generate_bsbm_hdt
 from BSBM.cottas import generate as generate_bsbm_cottas
 from BSBM.vortex_rdf import generate as generate_bsbm_vortex_rdf
+from WatDiv.execution import run as run_watdiv
 from WatDiv.manifest import DATASET_DECLARATIONS, prepare as prepare_watdiv
 from WatDiv.representations import (
     REPRESENTATION_TYPES,
@@ -207,6 +208,19 @@ def main(argv=None) -> int:
                 expected_count=args.expected_count,
             )
             print(json.dumps({"written": args.output, "queries": len(manifest["queries"])}, sort_keys=True))
+            return EXIT_SUCCESS
+        if args.command == "watdiv" and args.watdiv_command == "run":
+            records = run_watdiv(
+                manifest_path=Path(args.manifest),
+                dataset_path=Path(args.dataset_path),
+                output=Path(args.output),
+                experiment_id=args.experiment_id,
+                warmup_runs=args.warmup_runs,
+                measured_runs=args.measured_runs,
+                timeout_s=args.timeout_s,
+                resume=args.resume,
+            )
+            print(json.dumps({"records": len(records), "written": args.output}, sort_keys=True))
             return EXIT_SUCCESS
         if args.command == "watdiv" and args.watdiv_command == "representation":
             if args.watdiv_representation_command == "inspect":

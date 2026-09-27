@@ -26,14 +26,14 @@ def audit_repository(root: Path) -> dict[str, Any]:
         'benchmark_core/rdf_execution.py', 'benchmark_core/atomic_io.py',
         'DBBench/manifest.py', 'DBBench/execution.py', 'DBBench/README.md',
         'BSBM/manifest.py', 'BSBM/execution.py', 'BSBM/README.md',
-        'WatDiv/manifest.py', 'WatDiv/representations.py', 'WatDiv/README.md',
+        'WatDiv/manifest.py', 'WatDiv/execution.py', 'WatDiv/representations.py', 'WatDiv/README.md',
     ]
     missing = [path for path in required if not (root / path).is_file()]
     if missing:
         raise ValueError('Missing architecture files: ' + ', '.join(missing))
 
     wrappers = {}
-    for benchmark in BENCHMARKS[:2]:
+    for benchmark in BENCHMARKS:
         execution = root / benchmark / 'execution.py'
         wrappers[benchmark.lower()] = _imports_shared_runner(execution)
         if not wrappers[benchmark.lower()]:

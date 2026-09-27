@@ -1,6 +1,6 @@
 # WatDiv — Waterloo SPARQL Diversity Test Suite
 
-> **Status: adapter support is in place** — public manifest preparation is implemented and validated against local WatDiv stress workloads.
+> **Status: runnable adapter** — public manifest preparation, shared RDFLib execution, representation receipts, and experiment declarations are available.
 
 [WatDiv](https://dsg.uwaterloo.ca/watdiv/) (Aluç et al., University of
 Waterloo) is a synthetic benchmark designed to cover a much wider range of
@@ -23,6 +23,23 @@ Use the shared public CLI to prepare a WatDiv manifest from the native stress wo
 ```bash
 python -m benchmark_core.cli watdiv prepare --dataset watdiv-10m --output /tmp/watdiv-10m.json
 ```
+
+The public run command routes a prepared manifest through the shared RDFLib
+execution contract:
+
+```bash
+python -m benchmark_core.cli watdiv run \
+  --manifest /tmp/watdiv-10m.json \
+  --dataset-path WatDiv/data/watdiv.10M.nt \
+  --output /tmp/watdiv-10m-results.jsonl \
+  --experiment-id watdiv-10m-rdflib-smoke \
+  --warmup-runs 0 --measured-runs 1 --timeout-s 10
+```
+
+The benchmark-owned experiment declarations are under `WatDiv/experiments/`.
+They bind the RDF source, HDT, COTTAS, and the two indexed Vortex-RDF variants
+to stable system identifiers. They do not define a semantic baseline because
+KROWN owns scenario baselines and smoke-query selection.
 
 The adapter validates:
 
@@ -81,8 +98,8 @@ time, load time, and query time are separate concepts. Source SHA-256 is
 computed when the source receipt is created; no source hash is fabricated or
 silently omitted.
 
-The CLI builds exactly one dataset/representation per invocation. This job
-does not execute the WatDiv query workload. Large real builds are operational
+The representation CLI builds exactly one dataset/representation per invocation.
+The separate `watdiv run` command executes a prepared manifest through the shared runner. Large real builds are operational
 actions and are not run by the unit-test suite.
 
 ## Planned setup

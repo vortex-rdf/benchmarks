@@ -53,5 +53,35 @@ class ExperimentDeclarationTests(unittest.TestCase):
             validate_experiment_declaration(value)
 
 
+    def test_committed_watdiv_declarations_are_valid(self):
+        root = Path(__file__).resolve().parents[1]
+        declarations = {
+            "watdiv-10m-smoke.json": ("watdiv-10m", "watdiv-stress-100", "watdiv/watdiv-10m/smoke"),
+            "watdiv-10m-full.json": ("watdiv-10m", "watdiv-stress-100", "watdiv/watdiv-10m/full"),
+            "watdiv-100m-full.json": ("watdiv-100m", "watdiv-stress-1000", "watdiv/watdiv-100m/full"),
+        }
+        expected_representations = {
+            "rdf/source",
+            "hdt/default",
+            "cottas/default",
+            "vortex-rdf/dictionary-secondary-by-reference",
+            "vortex-rdf/dictionary-secondary-by-copy",
+        }
+        for name, (dataset, workload, experiment) in declarations.items():
+            value = load_experiment_declaration(root / "WatDiv/experiments" / name)
+            self.assertEqual(value["benchmark"], "watdiv")
+            self.assertEqual(value["dataset"], dataset)
+            self.assertEqual(value["workload"], workload)
+            self.assertEqual(value["experiment"], experiment)
+            self.assertEqual(set(value["representations"]), expected_representations)
+            self.assertEqual(len(value["bindings"]), 14)
+            self.assertEqual(value["execution_policy"], {
+                "warmup_runs": 0,
+                "measured_runs": 1,
+                "timeout_s": 10.0,
+            })
+            self.assertNotIn("semantic_baseline", value)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -13,6 +13,7 @@ class ArchitectureAuditTests(unittest.TestCase):
         self.assertEqual(report['shared_execution_wrappers'], {
             'dbbench': True,
             'bsbm': True,
+            'watdiv': True,
         })
         self.assertTrue(report['external_assets_ignored'])
         self.assertTrue(report['atomic_publication'])

@@ -1,0 +1,78 @@
+{
+  "benchmark": "watdiv",
+  "bindings": [
+    {
+      "representation": "rdf/source",
+      "system": "fuseki/memory"
+    },
+    {
+      "representation": "rdf/source",
+      "system": "fuseki/tdb2"
+    },
+    {
+      "representation": "rdf/source",
+      "system": "virtuoso/default"
+    },
+    {
+      "representation": "rdf/source",
+      "system": "qlever/default"
+    },
+    {
+      "representation": "rdf/source",
+      "system": "oxigraph/memory"
+    },
+    {
+      "representation": "rdf/source",
+      "system": "oxigraph/rocksdb"
+    },
+    {
+      "representation": "hdt/default",
+      "system": "hdt-rdflib/optimized-in-memory"
+    },
+    {
+      "representation": "hdt/default",
+      "system": "comunica/hdt"
+    },
+    {
+      "representation": "cottas/default",
+      "system": "pycottas/default"
+    },
+    {
+      "representation": "rdf/source",
+      "system": "rdflib/default"
+    },
+    {
+      "representation": "vortex-rdf/dictionary-secondary-by-reference",
+      "system": "vortex-rdf/dictionary-secondary-by-reference"
+    },
+    {
+      "representation": "vortex-rdf/dictionary-secondary-by-reference",
+      "system": "vortex-rdf/dictionary-secondary-by-reference-memory"
+    },
+    {
+      "representation": "vortex-rdf/dictionary-secondary-by-copy",
+      "system": "vortex-rdf/dictionary-secondary-by-copy"
+    },
+    {
+      "representation": "vortex-rdf/dictionary-secondary-by-copy",
+      "system": "vortex-rdf/dictionary-secondary-by-copy-memory"
+    }
+  ],
+  "dataset": "watdiv-10m",
+  "execution_policy": {
+    "measured_runs": 1,
+    "timeout_s": 10.0,
+    "warmup_runs": 0
+  },
+  "experiment": "watdiv/watdiv-10m/full",
+  "inventory": "data/generated/watdiv-10m/hdt/dataset-inventory.json",
+  "representations": {
+    "cottas/default": "data/generated/watdiv-10m/cottas/cottas-receipt.json",
+    "hdt/default": "data/generated/watdiv-10m/hdt/hdt-receipt.json",
+    "rdf/source": "data/generated/watdiv-10m/hdt/rdf-source-receipt.json",
+    "vortex-rdf/dictionary-secondary-by-copy": "data/generated/watdiv-10m/vortex-by-copy/vortex-receipt.json",
+    "vortex-rdf/dictionary-secondary-by-reference": "data/generated/watdiv-10m/vortex/vortex-receipt.json"
+  },
+  "schema": "rdf-experiment-declaration-v1",
+  "workload": "watdiv-stress-100"
+}
