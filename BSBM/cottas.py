@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 import json
+import os
+import tempfile
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from importlib import import_module, metadata
 from pathlib import Path
@@ -21,6 +24,21 @@ def _load_pycottas() -> ModuleType:
     if version != PYCOTTAS_VERSION:
         raise RuntimeError(f"pycottas {PYCOTTAS_VERSION} is required, found {version}")
     return import_module("pycottas")
+
+
+@contextmanager
+def _isolated_pycottas_workspace(parent: Path):
+    """Run pyCOTTAS in a clean private cwd and restore cwd on every exit."""
+    original = Path.cwd()
+    with tempfile.TemporaryDirectory(
+        prefix=".pycottas-work-", dir=parent
+    ) as directory:
+        workspace = Path(directory).resolve()
+        os.chdir(workspace)
+        try:
+            yield workspace
+        finally:
+            os.chdir(original)
 
 
 def _inventory_receipts(path: Path) -> list[str]:
@@ -63,7 +81,12 @@ def generate(*, source: Path, output: Path, rdf_receipt: Path,
     temporary = output.with_name(f".{output.stem}.tmp{output.suffix or '.cottas'}")
     temporary.unlink(missing_ok=True)
     try:
-        pycottas.rdf2cottas(str(source), str(temporary), index=COTTAS_INDEX, disk=True)
+        # pyCOTTAS 1.1.0 creates a fixed pycottas.duckdb file in the current
+        # working directory. Isolate that internal database per conversion.
+        with _isolated_pycottas_workspace(output.parent):
+            pycottas.rdf2cottas(
+                str(source), str(temporary), index=COTTAS_INDEX, disk=True
+            )
         if not temporary.is_file() or temporary.stat().st_size == 0:
             raise ValueError("pycottas did not create a non-empty COTTAS file")
         verified = pycottas.verify(str(temporary))

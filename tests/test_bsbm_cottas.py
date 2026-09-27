@@ -53,6 +53,38 @@ class BsbmCottasTests(unittest.TestCase):
             self.assertEqual([item["representation"] for item in stored["representations"]],
                              ["rdf/source", "hdt/default", "cottas/default"])
 
+    def test_generate_isolates_fixed_pycottas_duckdb_workspace(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            receipt = self._source_receipt(root)
+            outer_database = root / "pycottas.duckdb"
+            outer_database.write_bytes(b"existing quads table")
+
+            class FixedDatabasePycottas(_FakePycottas):
+                def rdf2cottas(self, source, output, *, index, disk):
+                    database = Path.cwd() / "pycottas.duckdb"
+                    if database.exists():
+                        raise RuntimeError("Table with name quads already exists")
+                    database.write_bytes(b"private database")
+                    super().rdf2cottas(
+                        source, output, index=index, disk=disk
+                    )
+
+            fake = FixedDatabasePycottas()
+            with patch("BSBM.cottas._load_pycottas", return_value=fake):
+                generate(
+                    source=root / "dataset.nt",
+                    output=root / "dataset.cottas",
+                    rdf_receipt=receipt,
+                    cottas_receipt=root / "cottas-default-receipt.json",
+                    inventory=root / "dataset-inventory.json",
+                    source_triple_count=1,
+                )
+
+            self.assertEqual(outer_database.read_bytes(), b"existing quads table")
+            self.assertTrue((root / "dataset.cottas").is_file())
+            self.assertEqual(list(root.glob(".pycottas-work-*")), [])
+
     def test_verify_rejects_non_cottas_receipt(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
