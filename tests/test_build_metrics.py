@@ -58,11 +58,22 @@ class BuildMetricsTests(unittest.TestCase):
         self.assertEqual(result["status"], "ok")
         self.assertEqual(result["returncode"], 0)
         self.assertGreater(result["elapsed_ns"], 0)
-        self.assertEqual(result["memory"]["scope"], "builder-process-tree")
+        self.assertEqual(result["memory"]["scope"], "builder-cgroup-v2")
         self.assertGreater(result["memory"]["sample_count"], 0)
         self.assertGreater(result["memory"]["peak_rss_bytes"], 0)
+        self.assertGreaterEqual(result["memory"]["cgroup_lifetime_peak_bytes"], 8 * 1024 * 1024)
+        self.assertIsNotNone(result["memory"]["peak_process_tree_rss_bytes"])
         self.assertEqual(result["memory"]["sample_errors"], 0)
         self.assertIn("8388608", log)
+
+    def test_build_command_without_cgroup_keeps_process_tree_scope(self):
+        with tempfile.TemporaryDirectory() as directory:
+            result = run_build_command(
+                [sys.executable, "-c", "x=bytearray(8*1024*1024)"],
+                cwd=Path(directory), interval_s=0.001, cgroup=False,
+            )
+        self.assertEqual(result["memory"]["scope"], "builder-process-tree")
+        self.assertNotIn("cgroup_lifetime_peak_bytes", result["memory"])
 
     def test_failed_builder_returns_failed_metrics(self):
         with tempfile.TemporaryDirectory() as directory:
