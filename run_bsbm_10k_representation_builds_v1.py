@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
+from benchmark_core.hashing import sha256_file
 from benchmark_core.build_metrics import (
     measure_representation_size,
     run_build_command,
@@ -40,11 +41,8 @@ def utc_now() -> str:
 
 
 def sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
+    # Cached by (device, inode, size, mtime): unchanged sources are read once.
+    return sha256_file(path)
 
 
 def atomic_json(path: Path, value: Any) -> None:

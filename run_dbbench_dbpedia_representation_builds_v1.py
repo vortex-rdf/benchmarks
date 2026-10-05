@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from benchmark_core.hashing import sha256_file
 from benchmark_core.build_metrics import measure_representation_size, run_build_command
 from benchmark_core.representation import create_inventory, create_receipt
 
@@ -25,10 +26,8 @@ LEGACY_SHA = 'f2f69bc879f54a32f8062f58742b7a8b6d806ea13ae534c013b344965cd3b4c5'
 
 def utc(): return datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
 def sha(path):
- d=hashlib.sha256()
- with path.open('rb') as f:
-  for b in iter(lambda:f.read(1024*1024),b''): d.update(b)
- return d.hexdigest()
+ # Cached by (device, inode, size, mtime): unchanged sources are read once.
+ return sha256_file(path)
 def atomic(path,value):
  path.parent.mkdir(parents=True,exist_ok=True); tmp=path.with_name('.'+path.name+'.tmp')
  tmp.write_text(json.dumps(value,indent=2,sort_keys=True,allow_nan=False)+'\n'); tmp.replace(path)
