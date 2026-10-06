@@ -1,0 +1,147 @@
+{
+  "invalid_query_count": 20,
+  "queries": [
+    {
+      "error_message": "ParseException: Expected SelectQuery, found '?'  (at char 91), (line:1, col:92)",
+      "error_type": "RuntimeError",
+      "query_sha256": null,
+      "reporting_family": null,
+      "source_query_id": "JOINS/dbpedia/small/joinSS_B_small.txt::q0023"
+    },
+    {
+      "error_message": "ValueError: Invalid unicode code point: 20131982",
+      "error_type": "RuntimeError",
+      "query_sha256": null,
+      "reporting_family": null,
+      "source_query_id": "JOINS/dbpedia/small/joinSS_D_small.txt::q0011"
+    },
+    {
+      "error_message": "ParseException: Expected SelectQuery, found '?'  (at char 118), (line:1, col:119)",
+      "error_type": "RuntimeError",
+      "query_sha256": null,
+      "reporting_family": null,
+      "source_query_id": "JOINS/dbpedia/small/joinSS_D_small.txt::q0017"
+    },
+    {
+      "error_message": "ParseException: Expected SelectQuery, found '?'  (at char 34), (line:1, col:35)",
+      "error_type": "RuntimeError",
+      "query_sha256": null,
+      "reporting_family": null,
+      "source_query_id": "TP/dbpedia/VVoSPARQL.txt::q0071"
+    },
+    {
+      "error_message": "ParseException: Expected SelectQuery, found '?'  (at char 34), (line:1, col:35)",
+      "error_type": "RuntimeError",
+      "query_sha256": null,
+      "reporting_family": null,
+      "source_query_id": "TP/dbpedia/VVoSPARQL.txt::q0092"
+    },
+    {
+      "error_message": "ValueError: Invalid unicode code point: 20141915",
+      "error_type": "RuntimeError",
+      "query_sha256": null,
+      "reporting_family": null,
+      "source_query_id": "TP/dbpedia/VVoSPARQL.txt::q0168"
+    },
+    {
+      "error_message": "ParseException: Expected SelectQuery, found '?'  (at char 34), (line:1, col:35)",
+      "error_type": "RuntimeError",
+      "query_sha256": null,
+      "reporting_family": null,
+      "source_query_id": "TP/dbpedia/VVoSPARQL.txt::q0169"
+    },
+    {
+      "error_message": "ParseException: Expected SelectQuery, found '?'  (at char 34), (line:1, col:35)",
+      "error_type": "RuntimeError",
+      "query_sha256": null,
+      "reporting_family": null,
+      "source_query_id": "TP/dbpedia/VVoSPARQL.txt::q0249"
+    },
+    {
+      "error_message": "ParseException: Expected SelectQuery, found '?'  (at char 23), (line:1, col:24)",
+      "error_type": "RuntimeError",
+      "query_sha256": null,
+      "reporting_family": null,
+      "source_query_id": "TP/dbpedia/VpoSPARQL.txt::q0143"
+    },
+    {
+      "error_message": "ValueError: Invalid unicode code point: 20131959",
+      "error_type": "RuntimeError",
+      "query_sha256": null,
+      "reporting_family": null,
+      "source_query_id": "TP/dbpedia/VpoSPARQL.txt::q0157"
+    },
+    {
+      "error_message": "ParseException: Expected SelectQuery, found '?'  (at char 23), (line:1, col:24)",
+      "error_type": "RuntimeError",
+      "query_sha256": null,
+      "reporting_family": null,
+      "source_query_id": "TP/dbpedia/VpoSPARQL.txt::q0166"
+    },
+    {
+      "error_message": "ParseException: Expected SelectQuery, found '?'  (at char 23), (line:1, col:24)",
+      "error_type": "RuntimeError",
+      "query_sha256": null,
+      "reporting_family": null,
+      "source_query_id": "TP/dbpedia/VpoSPARQL.txt::q0179"
+    },
+    {
+      "error_message": "ParseException: Expected SelectQuery, found '?'  (at char 23), (line:1, col:24)",
+      "error_type": "RuntimeError",
+      "query_sha256": null,
+      "reporting_family": null,
+      "source_query_id": "TP/dbpedia/VpoSPARQL.txt::q0442"
+    },
+    {
+      "error_message": "ParseException: Expected SelectQuery, found '<'  (at char 25), (line:1, col:26)",
+      "error_type": "RuntimeError",
+      "query_sha256": null,
+      "reporting_family": null,
+      "source_query_id": "TP/dbpedia/sVoSPARQL.txt::q0043"
+    },
+    {
+      "error_message": "ParseException: Expected SelectQuery, found '<'  (at char 25), (line:1, col:26)",
+      "error_type": "RuntimeError",
+      "query_sha256": null,
+      "reporting_family": null,
+      "source_query_id": "TP/dbpedia/sVoSPARQL.txt::q0048"
+    },
+    {
+      "error_message": "ParseException: Expected SelectQuery, found '<'  (at char 25), (line:1, col:26)",
+      "error_type": "RuntimeError",
+      "query_sha256": null,
+      "reporting_family": null,
+      "source_query_id": "TP/dbpedia/sVoSPARQL.txt::q0477"
+    },
+    {
+      "error_message": "ParseException: Expected SelectQuery, found '<'  (at char 16), (line:1, col:17)",
+      "error_type": "RuntimeError",
+      "query_sha256": null,
+      "reporting_family": null,
+      "source_query_id": "TP/dbpedia/spoSPARQL.txt::q0055"
+    },
+    {
+      "error_message": "ParseException: Expected SelectQuery, found '<'  (at char 16), (line:1, col:17)",
+      "error_type": "RuntimeError",
+      "query_sha256": null,
+      "reporting_family": null,
+      "source_query_id": "TP/dbpedia/spoSPARQL.txt::q0075"
+    },
+    {
+      "error_message": "ParseException: Expected SelectQuery, found '<'  (at char 16), (line:1, col:17)",
+      "error_type": "RuntimeError",
+      "query_sha256": null,
+      "reporting_family": null,
+      "source_query_id": "TP/dbpedia/spoSPARQL.txt::q0353"
+    },
+    {
+      "error_message": "ParseException: Expected SelectQuery, found '<'  (at char 16), (line:1, col:17)",
+      "error_type": "RuntimeError",
+      "query_sha256": null,
+      "reporting_family": null,
+      "source_query_id": "TP/dbpedia/spoSPARQL.txt::q0395"
+    }
+  ],
+  "schema": "dbbench-invalid-query-inventory-v1",
+  "validation_campaign_id": "dbbench-dbpedia-vortex-gate-20260921T185447Z"
+}

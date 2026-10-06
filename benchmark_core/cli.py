@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from DBBench.execution import run as run_dbbench
 from DBBench.manifest import prepare as prepare_dbbench
+from DBBench.schedule import records_sha256, write_schedule
 from BSBM.execution import run as run_bsbm
 from BSBM.manifest import prepare as prepare_bsbm
 from BSBM.hdt import generate as generate_bsbm_hdt
@@ -122,6 +123,11 @@ def _parser() -> argparse.ArgumentParser:
     prepare.add_argument("--groups", nargs="+", default=["TP", "JOINS"])
     prepare.add_argument("--join-sizes", nargs="+", default=["small", "big"])
     prepare.add_argument("--query-id-file")
+    schedule = dbbench_commands.add_parser("schedule", help="expand a prepared manifest into the phased TP3 schedule")
+    schedule.add_argument("--base", required=True, help="manifest written by `dbbench prepare`")
+    schedule.add_argument("--invalid", required=True, help="invalid-query inventory (DBBench/invalid-queries.json)")
+    schedule.add_argument("--output", required=True)
+    schedule.add_argument("--tp-passes", type=int, default=3)
     run_command = dbbench_commands.add_parser("run")
     run_command.add_argument("--manifest", required=True)
     run_command.add_argument("--dataset-path", required=True)
@@ -254,6 +260,12 @@ def main(argv=None) -> int:
                 timeout_s=args.timeout_s, resume=args.resume,
             )
             print(json.dumps({"records": len(records), "written": args.output}, sort_keys=True))
+            return EXIT_SUCCESS
+        if args.command == "dbbench" and args.dbbench_command == "schedule":
+            manifest = write_schedule(base=Path(args.base), invalid=Path(args.invalid),
+                                      output=Path(args.output), tp_passes=args.tp_passes)
+            print(json.dumps({"written": args.output, "queries": len(manifest["queries"]),
+                              "records_sha256": records_sha256(manifest)}, sort_keys=True))
             return EXIT_SUCCESS
         if args.command == "dbbench":
             manifest = prepare_dbbench(
