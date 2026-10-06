@@ -98,7 +98,7 @@ def _run_one(system_id: str, representation: str, declared: dict[str, Any], root
     if "rdf/source" in declared["representations"]:
         _, source_files = _representation_files(root, declared["representations"]["rdf/source"])
         source = source_files[0]
-    artifact = rep_files[0]
+    artifact = next((path for path in rep_files if not path.name.endswith('.index.v1-1')), rep_files[0])
     store: Path | None = artifact
     build_info: dict[str, Any] = {}
     if system.persistent:
@@ -114,7 +114,18 @@ def _run_one(system_id: str, representation: str, declared: dict[str, Any], root
         (directory / "build.json").write_text(json.dumps(build_info, indent=1, sort_keys=True, default=str) + "\n",
                                               encoding="utf-8")
     cache = drop_page_cache() if drop_caches else {"status": "skipped"}
-    handle = system.start(source=source, store=store)
+    failure = directory / "failed.json"
+    if hasattr(system, "query_timeout_s"):
+        system.query_timeout_s = profile.timeout_s   # servers that enforce the limit themselves (Comunica)
+    try:
+        handle = system.start(source=source, store=store)
+    except Exception as error:  # noqa: BLE001 - one failing system must not stop the campaign
+        system.stop()
+        failure.write_text(json.dumps({"system": system_id, "phase": "start", "error_type": type(error).__name__,
+                                       "error": str(error)[:4000]}, indent=1) + "\n", encoding="utf-8")
+        return {"status": "failed", "phase": "start", "error": str(error)[:300]}
+    if failure.exists():
+        failure.unlink()
     try:
         after_timeout = lambda: system.settle()  # noqa: E731
         summary = run_system(

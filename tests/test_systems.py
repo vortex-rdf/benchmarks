@@ -10,14 +10,23 @@ from benchmark_core.systems.virtuoso import Virtuoso
 
 class SystemTests(unittest.TestCase):
     def test_registry_ids_and_endpoints(self):
-        self.assertEqual(system_ids(), ["fuseki/memory", "fuseki/tdb2", "oxigraph/memory", "oxigraph/rocksdb",
-                                        "qlever/default", "virtuoso/default"])
+        self.assertEqual(system_ids(), ["comunica/hdt", "fuseki/memory", "fuseki/tdb2", "oxigraph/memory",
+                                        "oxigraph/rocksdb", "qlever/default", "virtuoso/default"])
         self.assertEqual(get_system("fuseki/memory").endpoint, "http://localhost:3030/ds/sparql")
         self.assertEqual(get_system("oxigraph/rocksdb").endpoint, "http://localhost:7878/query")
         self.assertEqual(get_system("qlever/default").endpoint, "http://localhost:7001")
         self.assertEqual(get_system("virtuoso/default").endpoint, "http://localhost:8890/sparql")
         with self.assertRaises(ValueError):
             get_system("nope/none")
+
+    def test_rdflib_family_ids(self):
+        vortex = get_system("vortex-rdf/dictionary-secondary-by-reference-memory-no-pushdown")
+        self.assertEqual((vortex.engine, vortex.in_memory, vortex.pushdown), ("vortex", True, False))
+        plain = get_system("vortex-rdf/dictionary-secondary-by-copy")
+        self.assertEqual((plain.engine, plain.in_memory, plain.pushdown), ("vortex", False, True))
+        self.assertEqual(get_system("pycottas/default").engine, "cottas")
+        self.assertEqual(get_system("hdt-rdflib/optimized-in-memory").engine, "hdt")
+        self.assertEqual(get_system("rdflib/default").endpoint, "http://localhost:7880/sparql")
 
     def test_persistence_flags(self):
         persistent = {s for s in system_ids() if get_system(s).persistent}

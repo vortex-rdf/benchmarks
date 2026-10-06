@@ -133,7 +133,7 @@ def run_system(*, manifest: Mapping[str, Any], system: str, experiment_id: str, 
                container: str | None, output: Path, profile: RunProfile,
                after_timeout: Callable[[], None] | None = None,
                extra_summary: Mapping[str, Any] | None = None,
-               progress: Callable[[str], None] = print) -> dict[str, Any]:
+               progress: Callable[[str], None] = lambda line: print(line, flush=True)) -> dict[str, Any]:
     """Execute ``manifest`` against ``endpoint`` and return the run summary.
 
     ``after_timeout`` is called, untimed, after any attempt that timed out, so the caller can
