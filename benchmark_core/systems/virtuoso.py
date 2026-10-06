@@ -85,6 +85,7 @@ class Virtuoso(ServerSystem):
         finally:
             memory = sampler.stop()
             self.stop()
+            docker.make_user_writable(store, self.image)
         return {"build": {"elapsed_ns": time.perf_counter_ns() - started, "graph_triples": count, "memory": memory}}
 
     def _graph_count(self) -> int:

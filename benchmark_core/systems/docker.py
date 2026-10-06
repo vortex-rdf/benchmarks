@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import subprocess
 import time
+from pathlib import Path
 from collections.abc import Callable, Mapping, Sequence
 
 import requests
@@ -125,3 +126,11 @@ def exec_in(name: str, command: Sequence[str], *, timeout: float | None = None) 
     """``docker exec`` in a running container; return (exit code, combined output)."""
     result = _run(["exec", name, *command], check=False, timeout=timeout)
     return result.returncode, result.stdout + result.stderr
+
+
+def make_user_writable(path: Path | str, image: str) -> None:
+    """Let the host user manage files a container created as another user (chmod -R a+rwX)."""
+    result = _run(["run", "--rm", "--user", "0:0", "--volume", f"{Path(path).resolve()}:/cleanup",
+                   "--entrypoint", "sh", image, "-c", "chmod -R a+rwX /cleanup"], check=False)
+    if result.returncode != 0:
+        raise DockerError(f"cannot make {path} writable: {result.stderr.strip()}")

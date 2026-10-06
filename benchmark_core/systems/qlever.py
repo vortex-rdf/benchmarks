@@ -27,12 +27,12 @@ class QLever(ServerSystem):
         self._environment = {"UID": str(os.getuid()), "GID": str(os.getgid())}
 
     def _index_command(self, source_name: str) -> list[str]:
-        script = ("mkdir -p /index && /qlever/qlever-index --index-basename /index/dataset "
+        script = ("/qlever/qlever-index --index-basename /data/dataset "
                   f"--kg-input-file {shlex.quote('/source/' + source_name)} --file-format nt")
         return ["-c", script]
 
     def _server_command(self) -> list[str]:
-        script = (f"exec /qlever/qlever-server --index-basename /index/dataset --port {self.port}"
+        script = (f"exec /qlever/qlever-server --index-basename /data/dataset --port {self.port}"
                   f" --memory-max-size {resources.QLEVER_QUERY_MEMORY} --cache-max-size {resources.QLEVER_CACHE_MEMORY}"
                   f" -j {resources.QLEVER_SIMULTANEOUS_QUERIES}")
         return ["-c", script]
@@ -45,8 +45,8 @@ class QLever(ServerSystem):
         store.chmod(0o777)
         result = self.measured_one_shot(
             f"{self.container}-index", self.image, self._index_command(source.name),
-            volumes=[f"{source.parent}:/source:ro", f"{store}:/index"], timeout_s=timeout_s,
-            environment=self._environment, workdir="/index")
+            volumes=[f"{source.parent}:/source:ro", f"{store}:/data"], timeout_s=timeout_s,
+            environment=self._environment, workdir="/data")
         if result.get("exit_code") != 0:
             raise RuntimeError(f"qlever-index failed: {result.get('error') or result.get('logs')}")
         files = [p for p in store.rglob("*") if p.is_file() and not p.name.endswith(_RUNTIME_SUFFIXES)]
@@ -58,7 +58,7 @@ class QLever(ServerSystem):
             raise ValueError("qlever/default needs a built index directory")
         started = time.monotonic()
         docker.run_detached(self.container, self.image, self._server_command(), ports={self.port: self.port},
-                            volumes=[f"{Path(store).resolve()}:/index"], environment=self._environment, workdir="/index")
+                            volumes=[f"{Path(store).resolve()}:/data"], environment=self._environment, workdir="/data")
         docker.wait_until(self.ready, timeout_s=self.ready_timeout_s,
                           alive=lambda: docker.is_running(self.container), what="qlever")
         return ServerHandle(self.system_id, self.container, self.endpoint, time.monotonic() - started)

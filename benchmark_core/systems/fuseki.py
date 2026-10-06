@@ -75,6 +75,7 @@ class Fuseki(ServerSystem):
         finally:
             memory = sampler.stop()
             self.stop()
+            docker.make_user_writable(store, self.image)
         return {"build": {"elapsed_ns": time.perf_counter_ns() - started, "upload_s": upload_s, "memory": memory}}
 
     def start(self, *, source: Path | None, store: Path | None) -> ServerHandle:
