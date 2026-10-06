@@ -35,7 +35,7 @@ Everything is run **one system at a time**. Do not run anything else heavy on th
 ```bash
 git clone https://github.com/vortex-rdf/benchmarks.git
 cd benchmarks
-python3 -m venv .venv && . .venv/bin/activate
+python3 -m venv .venv && . .venv/bin/activate     # on Debian/Ubuntu: apt install python3-venv, or use `uv venv .venv`
 pip install -e ".[vortex]"          # use an editable install: the Dockerfiles in docker/ are found relative to the repo
 vortex-rdf-bench describe           # prints the available commands
 ```
@@ -92,6 +92,10 @@ vortex-rdf-bench bsbm prepare --query-stream $D/explore.csv \
   --selection full --output $D/full-manifest.json \
   --dataset bsbm-explore-10k --workload bsbm-explore-10k-full
 ```
+
+> **Quick sanity check first.** `--selection smoke` instead of `--selection full` (and `smoke-manifest.json`
+> as the manifest in step 5) selects 11 queries, one per template. The whole run, steps 4 to 6, takes about a
+> minute once the image is built. It is a pipeline check, not a measurement.
 
 **Step 5: run the four Vortex configurations over HTTP**
 
