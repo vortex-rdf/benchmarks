@@ -254,6 +254,12 @@ DBpedia roughly 20 minutes per Vortex configuration plus the slow systems' timeo
 * **Cold start.** The page cache is dropped before every system (`--no-drop-caches` skips it).
 * **Correctness.** BSBM results are fingerprinted (order-insensitive unless the query has `ORDER BY`) and
   can be compared across systems; DBpedia is count-only.
+* **BSBM query mix.** The official BSBM V3 Explore mix is used unchanged (bsbm-tools
+  `queries/explore/querymix.txt`: `1 2 2 3 2 2 4 2 2 5 7 7 5 7 7 8 9 9 8 9 9 10 10 11 12`). Q06 (the regex
+  query) is not part of it: BSBM 3.0 removed it from the Explore mix. Q09 is a **DESCRIBE** query, twice per
+  mix (2,200 of 13,750 attempts). The triples a DESCRIBE returns are implementation-defined, so systems may
+  return different graphs and do different amounts of work. Q09 is therefore checked for success only (no
+  cross-system fingerprint). Per-template numbers let you leave it out when comparing.
 * **Load time.** `start_to_ready_s` in `results.summary.json`: container start until the server answers
   a query (including data loading for in-memory servers).
 

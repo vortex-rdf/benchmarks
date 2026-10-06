@@ -37,6 +37,10 @@ vortex-rdf-bench bsbm prepare \
 
 `smoke` selects the first measured instance of each query template. `full` preserves every stream record. The adapter preserves repeated template IDs, stream positions, and the original warm-up or measured classification.
 
+The stream uses the official BSBM V3 Explore query mix unchanged: templates 1-5 and 7-12. Q06 (regex) is
+not in the V3 mix. Q09 is a DESCRIBE query whose result graph is implementation-defined, so it is compared
+across systems by success and latency, not by result fingerprint.
+
 The query-directory mode remains available through `--query-root` for manually prepared workloads.
 
 ## Install and run without KROWN
