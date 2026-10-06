@@ -18,6 +18,7 @@ from benchmark_core.hashing import sha256_file
 from benchmark_core.http_runner import provenance
 from benchmark_core.http_runner.runner import RunProfile, run_system
 from benchmark_core.manifest import load_manifest
+from benchmark_core.systems import docker
 from benchmark_core.systems.registry import get_system
 
 _SAFE = re.compile(r"[^A-Za-z0-9._-]+")
@@ -127,13 +128,25 @@ def _run_one(system_id: str, representation: str, declared: dict[str, Any], root
     if failure.exists():
         failure.unlink()
     try:
-        after_timeout = lambda: system.settle()  # noqa: E731
+        restarts: list[dict[str, Any]] = []
+
+        def after_timeout() -> None:
+            """Untimed recovery after a timeout or a lost connection: restart a dead container at once,
+            otherwise wait until the server is idle again (it restarts itself if it cannot)."""
+            if not docker.is_running(handle.container):
+                began = time.monotonic()
+                docker.remove(handle.container)
+                system.start(source=source, store=store)
+                restarts.append({"reason": "container-exited", "seconds": round(time.monotonic() - began, 1)})
+            else:
+                system.settle()
         summary = run_system(
             manifest=manifest, system=system_id, experiment_id=experiment, endpoint=handle.endpoint,
             container=handle.container, output=output, profile=profile, after_timeout=after_timeout,
             extra_summary={"load": {"start_to_ready_s": handle.start_to_ready_s, "load_s": handle.load_s,
                                     "page_cache": cache},
-                           "server": system.provenance(), "server_extra": handle.extra, "build": build_info})
+                           "server": system.provenance(), "server_extra": handle.extra, "build": build_info,
+                           "server_restarts": restarts})
     finally:
         system.stop()
     return {"status": "done", "output": str(output), "status_counts": summary["status_counts"]}

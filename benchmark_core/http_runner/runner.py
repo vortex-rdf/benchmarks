@@ -227,7 +227,9 @@ def run_system(*, manifest: Mapping[str, Any], system: str, experiment_id: str, 
                                        "measurement_boundary": "rdf-adapter-attempt-until-failure",
                                        "error_type": type(error).__name__, "error_message": str(error)})
                     stage_ns[phase] += int(record.get("attempt_elapsed_ns") or 0)
-                    if record["status"] == "timeout" and after_timeout is not None:
+                    lost_connection = (record["status"] == "engine_error"
+                                       and "ConnectionError" in str(record.get("error_message")))
+                    if (record["status"] == "timeout" or lost_connection) and after_timeout is not None:
                         after_timeout()
                     if (phase == "measured" and record["status"] == "timeout" and selector is not None
                             and profile.quarantine_threshold > 0 and not profile.force_include):

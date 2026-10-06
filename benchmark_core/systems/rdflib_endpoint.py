@@ -110,7 +110,7 @@ class RdflibEndpoint(ServerSystem):
         self._last = (source, store)
         ensure_image(self.image, self.vortex_rdflib_version)
         environment = {name: os.environ[name] for name in PASSTHROUGH if name in os.environ}
-        if self.query_timeout_s:      # cancel server-side shortly after the client has given up
+        if self.query_timeout_s and os.environ.get("VORTEX_RDF_BENCH_SERVER_DEADLINE", "1") != "0":   # cancel server-side shortly after the client has given up
             environment["QUERY_DEADLINE_S"] = f"{self.query_timeout_s + 0.5:g}"
         started = time.monotonic()
         docker.run_detached(self.container, self.image, self._arguments(artifact), ports={self.port: 8000},
