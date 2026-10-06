@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = {file = "LICENSE"}
 authors = [{name = "Vortex RDF"}]
-dependencies = ["rdflib==7.6.0", "requests>=2.31"]
+dependencies = ["rdflib==7.6.0", "requests>=2.31", "psutil>=5.9"]
 
 [project.optional-dependencies]
 # Only needed to build representations (see REPRODUCING.md); running servers over HTTP needs neither.
