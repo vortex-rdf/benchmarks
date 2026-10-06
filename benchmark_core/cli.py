@@ -7,6 +7,7 @@ from pathlib import Path
 from DBBench.execution import run as run_dbbench
 from DBBench.manifest import prepare as prepare_dbbench
 from DBBench.schedule import records_sha256, write_schedule
+from benchmark_core.http_runner.campaign import run_declaration
 from BSBM.execution import run as run_bsbm
 from BSBM.manifest import prepare as prepare_bsbm
 from BSBM.hdt import generate as generate_bsbm_hdt
@@ -137,6 +138,20 @@ def _parser() -> argparse.ArgumentParser:
     run_command.add_argument("--measured-runs", type=int, default=5)
     run_command.add_argument("--timeout-s", type=float, default=60.0)
     run_command.add_argument("--resume", action="store_true")
+    http_run = commands.add_parser("run", help="run a declaration against server systems over SPARQL HTTP")
+    http_run.add_argument("--declaration", required=True)
+    http_run.add_argument("--benchmark-root", required=True, help="directory the declaration's relative paths resolve against")
+    http_run.add_argument("--manifest", required=True, help="query manifest (BSBM prepare / DBBench schedule output)")
+    http_run.add_argument("--system", action="append", default=[], help="system id; repeat; default: all declared")
+    http_run.add_argument("--output-root", required=True)
+    http_run.add_argument("--store-root", required=True, help="where persistent server stores are built and kept")
+    http_run.add_argument("--timeout-s", type=float, help="per-query limit; default from the declaration")
+    http_run.add_argument("--correctness", choices=["auto", "fingerprint", "count-only"], default="auto")
+    http_run.add_argument("--quarantine-threshold", type=int, default=3,
+                          help="measured timeouts per query template before the template is skipped (0 disables)")
+    http_run.add_argument("--max-wall-s", type=float, default=0.0, help="stop a system after this wall time (0 disables)")
+    http_run.add_argument("--no-drop-caches", action="store_true", help="do not drop the page cache before each system")
+    http_run.add_argument("--experiment-id")
     manifest = commands.add_parser("manifest")
     manifest_commands = manifest.add_subparsers(dest="manifest_command", required=True)
     manifest_validate = manifest_commands.add_parser("validate")
@@ -260,6 +275,15 @@ def main(argv=None) -> int:
                 timeout_s=args.timeout_s, resume=args.resume,
             )
             print(json.dumps({"records": len(records), "written": args.output}, sort_keys=True))
+            return EXIT_SUCCESS
+        if args.command == "run":
+            outcome = run_declaration(
+                declaration=Path(args.declaration), benchmark_root=Path(args.benchmark_root),
+                manifest_path=Path(args.manifest), systems=args.system, output_root=Path(args.output_root),
+                store_root=Path(args.store_root), timeout_s=args.timeout_s, correctness=args.correctness,
+                quarantine_threshold=args.quarantine_threshold, max_wall_s=args.max_wall_s,
+                drop_caches=not args.no_drop_caches, experiment_id=args.experiment_id)
+            print(json.dumps(outcome, sort_keys=True, default=str))
             return EXIT_SUCCESS
         if args.command == "dbbench" and args.dbbench_command == "schedule":
             manifest = write_schedule(base=Path(args.base), invalid=Path(args.invalid),
