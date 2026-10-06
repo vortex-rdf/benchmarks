@@ -10,10 +10,75 @@ answers requests one at a time, like the in-process baseline.
 from __future__ import annotations
 
 import argparse
+import ctypes
 import json
 import os
 import sys
+import threading
 import time
+
+
+class QueryDeadline(BaseException):
+    """Raised inside the query thread when the server-side deadline passes.
+
+    A BaseException so that rdflib-endpoint's ``except Exception`` handlers do not turn it into an HTTP 400.
+    """
+
+
+class DeadlineMiddleware:
+    """Cancel a query that runs past ``QUERY_DEADLINE_S`` (answer 504) instead of letting it run on.
+
+    rdflib-endpoint evaluates queries inline in the event-loop thread, so a query nobody waits for any
+    more would block the server (and keep growing memory). The watchdog raises ``QueryDeadline`` in that
+    thread; evaluation stops at the next Python bytecode. A long call inside a native extension finishes
+    first. The deadline is set slightly above the client timeout, so the client always times out first.
+    """
+
+    def __init__(self, app, deadline_s: float):
+        self.app, self.deadline_s = app, deadline_s
+        self.lock = threading.Lock()
+        self.cancelled = 0
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http" or scope.get("path") != "/sparql" or self.deadline_s <= 0:
+            return await self.app(scope, receive, send)
+        thread_id = threading.get_ident()
+        state = {"active": True}
+
+        def fire():
+            with self.lock:
+                if state["active"]:
+                    ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_ulong(thread_id), ctypes.py_object(QueryDeadline))
+
+        timer = threading.Timer(self.deadline_s, fire)
+        timer.start()
+        started = False
+
+        async def tracked_send(message):
+            nonlocal started
+            started = started or message["type"] == "http.response.start"
+            await send(message)
+
+        try:
+            try:
+                await self.app(scope, receive, tracked_send)
+            except QueryDeadline:
+                self.cancelled += 1
+                if not started:
+                    body = b"query exceeded the server-side deadline"
+                    await send({"type": "http.response.start", "status": 504,
+                                "headers": [(b"content-type", b"text/plain"), (b"content-length", str(len(body)).encode())]})
+                    await send({"type": "http.response.body", "body": body})
+        finally:
+            while True:     # never leave a pending deadline behind for the next request
+                try:
+                    timer.cancel()
+                    with self.lock:
+                        state["active"] = False
+                        ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_ulong(thread_id), None)
+                    break
+                except QueryDeadline:
+                    continue
 
 
 def build_graph(engine: str, store: str, layout: str, in_memory: bool):
@@ -91,13 +156,17 @@ def main() -> None:
     app.include_router(NoParseCacheRouter(graph=graph, path="/sparql", title=f"{args.engine} endpoint",
                                           enable_update=False))
 
+    deadline_s = float(os.environ.get("QUERY_DEADLINE_S", "0") or 0)
+    identity["server_query_deadline_s"] = deadline_s
+    middleware = DeadlineMiddleware(app, deadline_s)
+
     @app.get("/ready")
     def ready():
-        return identity
+        return {**identity, "queries_cancelled": middleware.cancelled}
 
     import uvicorn
     # A single worker answers one request at a time; keep-alive must outlive idle periods.
-    uvicorn.run(app, host="0.0.0.0", port=args.port, workers=1, log_level="warning", access_log=False,
+    uvicorn.run(middleware, host="0.0.0.0", port=args.port, workers=1, log_level="warning", access_log=False,
                 timeout_keep_alive=3600)
 
 

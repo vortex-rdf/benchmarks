@@ -75,6 +75,7 @@ class RdflibEndpoint(ServerSystem):
         self.persistent = False
         self.ready_timeout_s = float(os.environ.get("VORTEX_RDF_BENCH_READY_TIMEOUT_S", "3600"))
         self._last: tuple[Path | None, Path | None] | None = None
+        self.query_timeout_s: float | None = None     # set by the campaign; enables server-side cancellation
         vortex = _VORTEX_ID.match(system_id)
         if vortex:
             self.engine, self.in_memory, self.pushdown = "vortex", bool(vortex.group(2)), not vortex.group(3)
@@ -109,6 +110,8 @@ class RdflibEndpoint(ServerSystem):
         self._last = (source, store)
         ensure_image(self.image, self.vortex_rdflib_version)
         environment = {name: os.environ[name] for name in PASSTHROUGH if name in os.environ}
+        if self.query_timeout_s:      # cancel server-side shortly after the client has given up
+            environment["QUERY_DEADLINE_S"] = f"{self.query_timeout_s + 0.5:g}"
         started = time.monotonic()
         docker.run_detached(self.container, self.image, self._arguments(artifact), ports={self.port: 8000},
                             volumes=[f"{artifact.parent}:/data:ro"], environment=environment)
