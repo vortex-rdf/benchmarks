@@ -34,8 +34,8 @@ class DeadlineMiddleware:
     first. The deadline is set slightly above the client timeout, so the client always times out first.
     """
 
-    def __init__(self, app, deadline_s: float):
-        self.app, self.deadline_s = app, deadline_s
+    def __init__(self, app, deadline_s: float, on_cancel=None):
+        self.app, self.deadline_s, self.on_cancel = app, deadline_s, on_cancel
         self.lock = threading.Lock()
         self.cancelled = 0
 
@@ -49,6 +49,8 @@ class DeadlineMiddleware:
             with self.lock:
                 if state["active"]:
                     ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_ulong(thread_id), ctypes.py_object(QueryDeadline))
+                    if self.on_cancel is not None:
+                        self.on_cancel()    # interrupt native work so that the thread reaches Python again
 
         timer = threading.Timer(self.deadline_s, fire)
         timer.start()
@@ -158,7 +160,11 @@ def main() -> None:
 
     deadline_s = float(os.environ.get("QUERY_DEADLINE_S", "0") or 0)
     identity["server_query_deadline_s"] = deadline_s
-    middleware = DeadlineMiddleware(app, deadline_s)
+    on_cancel = None
+    if args.engine == "cottas":     # pycottas runs every triple pattern as a DuckDB query on the default connection
+        import duckdb
+        on_cancel = duckdb.interrupt
+    middleware = DeadlineMiddleware(app, deadline_s, on_cancel)
 
     @app.get("/ready")
     def ready():

@@ -40,7 +40,9 @@ class ComunicaHdt(ServerSystem):
             import subprocess
             print(f"building {self.image}; this takes a few minutes", flush=True)
             subprocess.run(["docker", "build", "-t", self.image, str(DOCKER_CONTEXT)], check=True)
-        timeout = max(1, math.ceil(self.query_timeout_s)) if self.query_timeout_s else 60
+        # Comunica kills its worker at the server timeout and starts a new one. Set it one second past the
+        # client timeout so that the client always records the timeout (not the killed connection).
+        timeout = math.ceil(self.query_timeout_s) + 1 if self.query_timeout_s else 60
         started = time.monotonic()
         docker.run_detached(self.container, self.image,
                             ["hdt@/data/dataset.hdt", "-p", "3000", "-w", "1", "-t", str(timeout)],

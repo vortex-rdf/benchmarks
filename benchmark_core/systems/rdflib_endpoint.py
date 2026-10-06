@@ -125,6 +125,11 @@ class RdflibEndpoint(ServerSystem):
         return ServerHandle(self.system_id, self.container, self.endpoint, time.monotonic() - started,
                             extra={"identity": identity, "tuning_environment": environment})
 
+    def idle_probe(self) -> None:
+        # The single event loop only answers /ready when no query is running. An ASK over all triples is
+        # not trivial for every store (pycottas scans the whole file for ?s ?p ?o).
+        requests.get(f"http://localhost:{self.port}/ready", timeout=5).raise_for_status()
+
     def settle(self, *, timeout_s: float | None = None) -> bool:
         """The endpoint cannot cancel a running query. Wait for the abandoned query to end, then restart.
 

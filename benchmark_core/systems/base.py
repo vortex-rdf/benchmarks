@@ -68,6 +68,10 @@ class ServerSystem(abc.ABC):
     def ready(self) -> bool:
         return docker.sparql_ask_ready(self.endpoint)
 
+    def idle_probe(self) -> None:
+        """A trivial request that only returns once the server is free (raises otherwise)."""
+        docker.sparql_ask_ready(self.endpoint, timeout_s=5.0)
+
     def settle(self, *, timeout_s: float = 600.0) -> bool:
         """Untimed: wait until the server answers a trivial query quickly again.
 
@@ -79,7 +83,7 @@ class ServerSystem(abc.ABC):
         while time.monotonic() < deadline:
             started = time.monotonic()
             try:
-                docker.sparql_ask_ready(self.endpoint, timeout_s=5.0)
+                self.idle_probe()
                 if time.monotonic() - started < 2.0:
                     return True
             except Exception:  # noqa: BLE001 - any failure means "not idle yet"
