@@ -162,3 +162,34 @@ class WatDivTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class WatdivHttpSelectionTests(unittest.TestCase):
+    def _queries(self):
+        from WatDiv.manifest import select_http_queries  # noqa: F401
+        def stream(name, ids):
+            return [{"stream": name, "native_query_id": i, "query": f"SELECT * WHERE {{ ?s ?p {i} }}",
+                     "query_id": f"d-{name}-{n:05d}", "query_sha256": "x"} for n, i in enumerate(ids)]
+        # templates of 100 ids: 1..100 -> T000, 101..200 -> T001, 201..300 -> T002
+        return stream("warmup", [250, 5, 150, 6, 201, 101]) + stream("test.1", [101, 1, 201, 2, 102, 301, 3])
+
+    def test_smoke_is_first_measured_instance_per_template(self):
+        from WatDiv.manifest import select_http_queries
+        out = select_http_queries(self._queries(), "smoke")
+        self.assertEqual([q["native_query_id"] for q in out], [101, 1, 201, 301])
+        self.assertEqual({q["phase"] for q in out}, {"measured"})
+        self.assertEqual([q["stream_position"] for q in out], [0, 1, 2, 3])
+
+    def test_full_warms_each_template_once_then_runs_test1_in_order(self):
+        from WatDiv.manifest import select_http_queries
+        out = select_http_queries(self._queries(), "full")
+        self.assertEqual([(q["phase"], q["native_query_id"]) for q in out][:3],
+                         [("warmup", 250), ("warmup", 5), ("warmup", 150)])
+        self.assertEqual([q["native_query_id"] for q in out if q["phase"] == "measured"], [101, 1, 201, 2, 102, 301, 3])
+        self.assertEqual([q["template_id"] for q in out][:3], ["watdiv-T002", "watdiv-T000", "watdiv-T001"])
+
+    def test_template_quarantine_uses_template_id(self):
+        from benchmark_core.http_runner.runner import _selector
+        self.assertEqual(_selector({"template_id": "watdiv-T004"}), ("template_id", "watdiv-T004"))
+        self.assertEqual(_selector({"bsbm_template_id": "query-01"}), ("bsbm_template_id", "query-01"))
+        self.assertIsNone(_selector({}))

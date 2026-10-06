@@ -21,6 +21,9 @@ EXPECTED_STREAM_NAMES = (
     "test.5",
 )
 EXPECTED_QUERY_COUNT = 12400
+TEMPLATE_INSTANCES = 100            # every native stress template has 100 instances (ids are consecutive)
+SELECTIONS = ("streams", "smoke", "qualification", "full")
+QUALIFICATION_MEASURED = 1240
 
 DATASET_DECLARATIONS = {
     "watdiv-10m": {
@@ -185,6 +188,47 @@ def _stream_phase(stream_name: str) -> str:
     return "warmup" if stream_name == "warmup" else "measured"
 
 
+def template_id(native_query_id: int) -> str:
+    return f"watdiv-T{(native_query_id - 1) // TEMPLATE_INSTANCES:03d}"
+
+
+def select_http_queries(queries: Sequence[dict[str, Any]], selection: str) -> list[dict[str, Any]]:
+    """Pre-expanded schedule for the HTTP runner.
+
+    smoke: the first test.1 instance of every template (one pass, no warm-up).
+    qualification / full: one warm-up query per template (its first instance in ``warmup``), then the
+    first 1,240 / all queries of ``test.1`` in stream order.
+    """
+    by_stream: dict[str, list[dict[str, Any]]] = {}
+    for query in queries:
+        by_stream.setdefault(query["stream"], []).append(query)
+    if "test.1" not in by_stream:
+        raise ValueError("the HTTP selections need the test.1 stream")
+
+    def first_per_template(stream: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        seen: set[str] = set()
+        picked = []
+        for query in stream:
+            template = template_id(query["native_query_id"])
+            if template not in seen:
+                seen.add(template)
+                picked.append(query)
+        return picked
+
+    if selection == "smoke":
+        plan = [("measured", q) for q in first_per_template(by_stream["test.1"])]
+    else:
+        if "warmup" not in by_stream:
+            raise ValueError("the qualification and full selections need the warmup stream")
+        measured = by_stream["test.1"]
+        if selection == "qualification":
+            measured = measured[:QUALIFICATION_MEASURED]
+        plan = [("warmup", q) for q in first_per_template(by_stream["warmup"])] + [("measured", q) for q in measured]
+    return [{**q, "phase": phase, "stream_phase": phase, "stream_position": position,
+             "template_id": template_id(q["native_query_id"])}
+            for position, (phase, q) in enumerate(plan)]
+
+
 def prepare(
     *,
     output: str | Path,
@@ -194,8 +238,15 @@ def prepare(
     workload: str | None = None,
     expected_count: int = EXPECTED_QUERY_COUNT,
     stream_names: Sequence[str] | None = None,
+    selection: str = "streams",
 ) -> dict[str, Any]:
-    """Prepare one validated WatDiv workload manifest."""
+    """Prepare one validated WatDiv workload manifest.
+
+    ``selection="streams"`` keeps every native stream (embedded runner). ``smoke``, ``qualification`` and
+    ``full`` write the pre-expanded schedule of the HTTP runner (see :func:`select_http_queries`).
+    """
+    if selection not in SELECTIONS:
+        raise ValueError(f"unknown selection {selection!r}; choose from {SELECTIONS}")
     if dataset not in DATASET_DECLARATIONS:
         raise ValueError(f"Unsupported WatDiv dataset: {dataset!r}")
     declaration = DATASET_DECLARATIONS[dataset]
@@ -266,6 +317,9 @@ def prepare(
 
     if baseline_mapping is None:
         raise ValueError(f"WatDiv workload {workload_dir} contains no valid stream data")
+    if selection != "streams":
+        queries = select_http_queries(queries, selection)
+        stream_names = sorted({q["stream"] for q in queries}, key=list(stream_names).index)
 
     official_workload_root = (_repo_root() / declaration["workload_dir"]).resolve()
     official_dataset_path = (_repo_root() / declaration["dataset_path"]).resolve()
@@ -285,7 +339,7 @@ def prepare(
         "dataset": dataset,
         "dataset_path": str(dataset_file),
         "workload_dir": str(workload_dir),
-        "source_format": "watdiv-native-stress",
+        "source_format": "watdiv-native-stress" if selection == "streams" else f"watdiv-native-stress-{selection}",
         "query_count": len(queries),
         "expected_query_count": expected_count,
         "stream_order": list(stream_names),

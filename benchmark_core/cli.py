@@ -87,6 +87,9 @@ def _parser() -> argparse.ArgumentParser:
     watdiv_prepare.add_argument("--workload-root")
     watdiv_prepare.add_argument("--workload")
     watdiv_prepare.add_argument("--expected-count", type=int, default=12400)
+    watdiv_prepare.add_argument("--selection", choices=("streams", "smoke", "qualification", "full"), default="streams",
+                                help="streams: every native stream (embedded runner); smoke/qualification/full: "
+                                     "pre-expanded schedule for `vortex-rdf-bench run`")
     watdiv_representation = watdiv_commands.add_parser("representation")
     watdiv_representation_commands = watdiv_representation.add_subparsers(
         dest="watdiv_representation_command", required=True
@@ -230,6 +233,7 @@ def main(argv=None) -> int:
                 workload_root=Path(args.workload_root) if args.workload_root else None,
                 workload=args.workload,
                 expected_count=args.expected_count,
+                selection=args.selection,
             )
             print(json.dumps({"written": args.output, "queries": len(manifest["queries"])}, sort_keys=True))
             return EXIT_SUCCESS

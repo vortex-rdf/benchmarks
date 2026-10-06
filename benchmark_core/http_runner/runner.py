@@ -10,7 +10,7 @@ Protocol (identical for every system):
   response body has been read (see ``worker.py``); counting and fingerprinting are untimed;
 * a manifest with ``stream_phase``/``stream_position`` fields is a pre-expanded schedule and is
   executed in stream order; otherwise every query runs ``warmup_runs`` then ``measured_runs`` times;
-* after ``quarantine_threshold`` measured timeouts of one template (``bsbm_template_id``) the
+* after ``quarantine_threshold`` measured timeouts of one template (``bsbm_template_id`` or ``template_id``) the
   remaining attempts of that template are recorded as ``skipped`` and not sent;
 * a wall-clock budget stops the run and records ``budget_exhausted`` instead of hanging.
 """
@@ -75,8 +75,11 @@ def _status_for_exception(error: BaseException) -> str:
 
 
 def _selector(query: Mapping[str, Any]) -> tuple[str, str] | None:
-    template = query.get("bsbm_template_id")
-    return None if template in (None, "") else ("bsbm_template_id", str(template).strip())
+    for key in ("bsbm_template_id", "template_id"):
+        template = query.get(key)
+        if template not in (None, ""):
+            return (key, str(template).strip())
+    return None
 
 
 def _timing_fields(attempt_ns: int, stages: Mapping[str, int] | None = None) -> dict[str, Any]:
