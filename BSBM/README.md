@@ -4,6 +4,12 @@ This adapter imports BSBM artifacts. It does not download, build, or run the BSB
 
 ## Generate outside the framework
 
+`BSBM/tools/generate.sh <10000|100000>` does this for you: it runs the original generator and test driver
+(Tpt/bsbm-tools, pinned commit, in Docker with a pinned JRE and time zone) outside the adapter, writes
+`BSBM/data/explore-<N>k/{dataset.nt,explore.csv,generation-receipt.json}` and checks them against
+`BSBM/checksums.json`. The manual layout it produces is described here. Running the benchmark
+against servers over HTTP is documented in [../REPRODUCING.md](../REPRODUCING.md).
+
 Use the original BSBM tools in a separate checkout. Put each generated scale under the ignored `BSBM/data/` directory:
 
 ```text

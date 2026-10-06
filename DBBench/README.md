@@ -5,6 +5,13 @@ Benchmarks vortex-rdf against [pycottas](https://github.com/cottas-rdf/pycottas)
 `Store`, so SPARQL evaluation is rdflib's engine for both — the store serving
 triple patterns is the only variable.
 
+> **Paper protocol.** The DBpedia experiments of the paper (all systems over SPARQL HTTP, phased TP3
+> schedule, count-only comparison) are documented in [../REPRODUCING.md](../REPRODUCING.md). Dataset
+> acquisition scripts are in `DBBench/utils/` (`download_dbpedia_3_5_1.sh`, `clean_dbpedia.sh`), the
+> expected identities in `DBBench/checksums.json`, and `vortex-rdf-bench dbbench schedule` produces the
+> TP3 schedule. Data is placed under `DBBench/data/` (git-ignored). The rdflib driver described below
+> measures the stores through rdflib instead.
+
 ## Layout
 
 ```
