@@ -1,0 +1,31 @@
+{
+ "_comment": "Expected sha256 of generated BSBM inputs (from the generation receipts used for the paper).",
+ "datasets": {
+  "explore-10k": {
+   "products": 10000,
+   "dataset": {
+    "sha256": "795edf9b7fcf7deb674fbc245669905fac90b24ed80b16ffe8e582e8301fa980",
+    "size_bytes": 881768485,
+    "triple_count": 3421251
+   },
+   "query_stream": {
+    "sha256": "78d36bc15a2135c698b437169168c3a15a9f35bc1cb736b5fa63bebf47510f25",
+    "size_bytes": 17047437,
+    "record_count": 13750
+   }
+  },
+  "explore-100k": {
+   "products": 100000,
+   "dataset": {
+    "sha256": "a34c77d8321e282e85f091a56d79744dd04be5a50075bff6184302ba061bb9c6",
+    "size_bytes": 9158219074,
+    "triple_count": 35159904
+   },
+   "query_stream": {
+    "sha256": "4e03115d2e53e84a4142fa9d8a98d0c5f86d7b1197cfbe2f11e65bc8951d7820",
+    "size_bytes": 17182603,
+    "record_count": 13750
+   }
+  }
+ }
+}
