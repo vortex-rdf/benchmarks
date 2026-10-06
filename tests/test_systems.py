@@ -33,10 +33,10 @@ class SystemTests(unittest.TestCase):
         self.assertEqual(persistent, {"fuseki/tdb2", "oxigraph/rocksdb", "qlever/default", "virtuoso/default"})
 
     def test_pinned_images(self):
-        self.assertEqual(OXIGRAPH_IMAGE, "dtaikg/oxigraph:0.5.9")
-        self.assertEqual(FUSEKI_IMAGE, "kgconstruct/fuseki:v6.2.0")
-        self.assertEqual(QLever.image, "kgconstruct/qlever:v0.6.0")
-        self.assertEqual(Virtuoso.image, "kgconstruct/virtuoso:v7.2.17")
+        self.assertEqual(OXIGRAPH_IMAGE, "vortex-rdf-bench/oxigraph:0.5.9")
+        self.assertEqual(FUSEKI_IMAGE, "vortex-rdf-bench/fuseki:v6.2.0")
+        self.assertEqual(QLever.image, "vortex-rdf-bench/qlever:v0.6.0")
+        self.assertEqual(Virtuoso.image, "vortex-rdf-bench/virtuoso:v7.2.17")
 
     def test_qlever_commands_use_campaign_tuning(self):
         qlever = QLever()

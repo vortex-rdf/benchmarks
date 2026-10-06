@@ -9,12 +9,13 @@ from benchmark_core.representation import create_inventory, create_receipt, load
 
 RDF2HDT_VERSION = "0.2.0"
 HDT_INDEX_SUFFIX = ".index.v1-1"
-HDT_INDEX_PYTHON_ENV = "KROWN_HDT_INDEX_PYTHON"
+HDT_INDEX_PYTHON_ENV = "KROWN_HDT_INDEX_PYTHON"          # legacy name, still honoured
+HDT_INDEX_PYTHON_ENV_NEW = "VORTEX_RDF_BENCH_HDT_PYTHON"
 
 def _index_python() -> Path:
-    value = os.environ.get(HDT_INDEX_PYTHON_ENV)
+    value = os.environ.get(HDT_INDEX_PYTHON_ENV_NEW) or os.environ.get(HDT_INDEX_PYTHON_ENV)
     if not value:
-        raise RuntimeError(f"{HDT_INDEX_PYTHON_ENV} must name the pinned rdflib-hdt Python")
+        raise RuntimeError(f"{HDT_INDEX_PYTHON_ENV_NEW} must name the pinned rdflib-hdt Python")
     path = Path(value).expanduser().resolve()
     if not path.is_file():
         raise FileNotFoundError(f"HDT index Python is missing: {path}")

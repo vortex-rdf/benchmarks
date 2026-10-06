@@ -10,15 +10,18 @@ from benchmark_core.hashing import sha256_file
 from benchmark_core.build_metrics import measure_representation_size, run_build_command
 from benchmark_core.representation import create_inventory, create_receipt
 
-BENCHMARKS = Path('/users/u0182905/benchmarks')
-DBPEDIA = Path('/users/u0182905/DBPedia')
-VORTEX_RDF = Path('/users/u0182905/vortex-rdf')
-VORTEX_RDFLIB = Path('/users/u0182905/vortex-rdflib')
-SOURCE = DBPEDIA / 'data/dbpedia_en_all.nt'
-OUT = DBPEDIA / 'data/current-evaluation'
+BENCHMARKS = Path(__file__).resolve().parent
+# Locations are overridable: VORTEX_RDF_REPO, VORTEX_RDFLIB_REPO, VORTEX_RDF_BENCH_DBPEDIA_NT (cleaned N-Triples),
+# VORTEX_RDF_BENCH_DBPEDIA_OUT (where representations and receipts are written).
+DBPEDIA = BENCHMARKS / 'DBBench/data'
+VORTEX_RDF = Path(os.environ.get('VORTEX_RDF_REPO', BENCHMARKS.parent / 'vortex-rdf')).expanduser().resolve()
+VORTEX_RDFLIB = Path(os.environ.get('VORTEX_RDFLIB_REPO', BENCHMARKS.parent / 'vortex-rdflib')).expanduser().resolve()
+SOURCE = Path(os.environ.get('VORTEX_RDF_BENCH_DBPEDIA_NT', DBPEDIA / 'dbpedia-3.5.1/dbpedia_en_all.nt')).expanduser()
+OUT = Path(os.environ.get('VORTEX_RDF_BENCH_DBPEDIA_OUT', DBPEDIA / 'dbpedia-en-all')).expanduser()
 RDF2HDT = BENCHMARKS / 'BSBM/data/tools/rdf2hdt-0.2.0/bin/rdf2hdt'
 VORTEX_CLI = VORTEX_RDF / 'target/release/vortex-rdf-cli'
-HDT_PYTHON = Path(os.environ.get('KROWN_HDT_INDEX_PYTHON','/users/u0182905/KROWN/.runtime/rdflib-hdt-3.3/bin/python'))
+HDT_PYTHON = Path(os.environ.get('VORTEX_RDF_BENCH_HDT_PYTHON') or os.environ.get('KROWN_HDT_INDEX_PYTHON')
+                  or BENCHMARKS / 'BSBM/data/tools/rdflib-hdt-3.3/bin/python')
 SOURCE_SHA = '2a6949c60134a5d453c4b9d2723a7e04a710fdcf5c3ebb34ee3a7f04f262d4ba'
 LEGACY = DBPEDIA / 'data/vortex_cottas_ids_v10/dbpedia_CNI_v10.vortex'
 LEGACY_SHA = 'f2f69bc879f54a32f8062f58742b7a8b6d806ea13ae534c013b344965cd3b4c5'
@@ -107,7 +110,7 @@ def main():
   announce(f'BUILD PLAN requested_stage={a.stage}')
   hdt=OUT/'dataset.hdt'; hdt_index=OUT/'dataset.hdt.index.v1-1'; hdt_r=OUT/'hdt-default-receipt.json'
   if a.stage in ('all','hdt'):
-   ledger['stages'].append(stage('hdt/default',[sys.executable,'-c','from pathlib import Path; from DBBench.representations import generate_hdt; import sys; generate_hdt(source=Path(sys.argv[1]),output=Path(sys.argv[2]),rdf_receipt=Path(sys.argv[3]),hdt_receipt=Path(sys.argv[4]),inventory=Path(sys.argv[5]),rdf2hdt=Path(sys.argv[6]),source_triple_count=int(sys.argv[7]))',str(SOURCE),str(hdt),str(rdf),str(hdt_r),str(inventory),str(RDF2HDT),str(a.triple_count)],[hdt,hdt_index],hdt_r,logs/'hdt.log',a.resume,env={**os.environ,'KROWN_HDT_INDEX_PYTHON':str(HDT_PYTHON)},ledger=ledger,ledger_path=ledger_path)); atomic(ledger_path,ledger)
+   ledger['stages'].append(stage('hdt/default',[sys.executable,'-c','from pathlib import Path; from DBBench.representations import generate_hdt; import sys; generate_hdt(source=Path(sys.argv[1]),output=Path(sys.argv[2]),rdf_receipt=Path(sys.argv[3]),hdt_receipt=Path(sys.argv[4]),inventory=Path(sys.argv[5]),rdf2hdt=Path(sys.argv[6]),source_triple_count=int(sys.argv[7]))',str(SOURCE),str(hdt),str(rdf),str(hdt_r),str(inventory),str(RDF2HDT),str(a.triple_count)],[hdt,hdt_index],hdt_r,logs/'hdt.log',a.resume,env={**os.environ,'VORTEX_RDF_BENCH_HDT_PYTHON':str(HDT_PYTHON)},ledger=ledger,ledger_path=ledger_path)); atomic(ledger_path,ledger)
   cottas=OUT/'dataset.cottas'; cottas_r=OUT/'cottas-default-receipt.json'
   if a.stage in ('all','cottas'):
    ledger['stages'].append(stage('cottas/default',[sys.executable,'-c','from pathlib import Path; from DBBench.representations import generate_cottas; import sys; generate_cottas(source=Path(sys.argv[1]),output=Path(sys.argv[2]),rdf_receipt=Path(sys.argv[3]),cottas_receipt=Path(sys.argv[4]),inventory=Path(sys.argv[5]),source_triple_count=int(sys.argv[6]))',str(SOURCE),str(cottas),str(rdf),str(cottas_r),str(inventory),str(a.triple_count)],[cottas],cottas_r,logs/'cottas.log',a.resume,ledger=ledger,ledger_path=ledger_path)); atomic(ledger_path,ledger)

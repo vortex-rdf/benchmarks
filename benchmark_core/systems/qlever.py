@@ -10,11 +10,12 @@ from typing import Any
 from benchmark_core.systems import docker, resources
 from benchmark_core.systems.base import ServerHandle, ServerSystem
 
-QLEVER_IMAGE = "kgconstruct/qlever:v0.6.0"
+QLEVER_IMAGE = "vortex-rdf-bench/qlever:v0.6.0"
 _RUNTIME_SUFFIXES = (".metrics-log.jsonl", ".resource-usage-log.tsv")
 
 
 class QLever(ServerSystem):
+    docker_context = Path(__file__).resolve().parents[2] / "docker" / "qlever"
     system_id = "qlever/default"
     container = "vortex-rdf-bench-qlever"
     image = QLEVER_IMAGE
@@ -38,6 +39,7 @@ class QLever(ServerSystem):
         return ["-c", script]
 
     def build(self, *, source: Path, store: Path, timeout_s: float = 10800.0) -> dict[str, Any]:
+        self.ensure_image()
         source, store = Path(source).resolve(), Path(store).resolve()
         if store.exists() and any(store.iterdir()):
             raise FileExistsError(f"index directory is not empty: {store} (refusing to overwrite)")
@@ -54,6 +56,7 @@ class QLever(ServerSystem):
         return {"build": result}
 
     def start(self, *, source: Path | None, store: Path | None) -> ServerHandle:
+        self.ensure_image()
         if store is None:
             raise ValueError("qlever/default needs a built index directory")
         started = time.monotonic()

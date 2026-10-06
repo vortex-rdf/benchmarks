@@ -134,3 +134,20 @@ def make_user_writable(path: Path | str, image: str) -> None:
                    "--entrypoint", "sh", image, "-c", "chmod -R a+rwX /cleanup"], check=False)
     if result.returncode != 0:
         raise DockerError(f"cannot make {path} writable: {result.stderr.strip()}")
+
+
+def ensure_image(image: str, context: Path | str, build_args: Mapping[str, str] | None = None) -> None:
+    """Build ``image`` from a Dockerfile context when it does not exist locally.
+
+    The images of this benchmark are not published on a registry; their Dockerfiles live in ``docker/``
+    and pin every download by checksum or digest.
+    """
+    if image_digest(image) is not None:
+        return
+    print(f"building {image} from {context}; this can take a few minutes", flush=True)
+    command = ["docker", "build", "-t", image]
+    for key, value in (build_args or {}).items():
+        command += ["--build-arg", f"{key}={value}"]
+    result = subprocess.run([*command, str(context)], check=False)
+    if result.returncode != 0:
+        raise DockerError(f"docker build of {image} failed (context {context})")

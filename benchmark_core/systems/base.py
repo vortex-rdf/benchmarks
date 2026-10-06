@@ -39,6 +39,11 @@ class ServerSystem(abc.ABC):
     query_path: str = "/query"
     port: int = 7878
     ready_timeout_s: float = 3600.0
+    docker_context: Path | None = None     # Dockerfile directory of ``image`` (built on first use)
+
+    def ensure_image(self) -> None:
+        if self.docker_context is not None:
+            docker.ensure_image(self.image, self.docker_context)
 
     # ---- required ----------------------------------------------------------------------
     @abc.abstractmethod

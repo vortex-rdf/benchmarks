@@ -17,10 +17,11 @@ from benchmark_core.systems import docker
 from benchmark_core.systems.base import ServerHandle, ServerSystem
 
 OXIGRAPH_VERSION = "0.5.9"
-OXIGRAPH_IMAGE = f"dtaikg/oxigraph:{OXIGRAPH_VERSION}"
+OXIGRAPH_IMAGE = f"vortex-rdf-bench/oxigraph:{OXIGRAPH_VERSION}"
 
 
 class Oxigraph(ServerSystem):
+    docker_context = Path(__file__).resolve().parents[2] / "docker" / "oxigraph"
     port = 7878
     query_path = "/query"
 
@@ -37,6 +38,7 @@ class Oxigraph(ServerSystem):
 
     # -- persistent store ----------------------------------------------------------------
     def build(self, *, source: Path, store: Path, timeout_s: float = 10800.0) -> dict[str, Any]:
+        self.ensure_image()
         if not self.persistent:
             raise NotImplementedError("the in-memory backend has no store to build")
         source = Path(source).resolve()
@@ -54,6 +56,7 @@ class Oxigraph(ServerSystem):
 
     # -- serving -------------------------------------------------------------------------
     def start(self, *, source: Path | None, store: Path | None) -> ServerHandle:
+        self.ensure_image()
         volumes: list[str] = []
         command = ["serve", "--bind", f"0.0.0.0:{self.port}"]
         if self.backend == "rocksdb":

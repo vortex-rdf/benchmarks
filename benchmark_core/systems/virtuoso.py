@@ -12,13 +12,14 @@ from benchmark_core.systems import docker, resources
 from benchmark_core.systems.base import ServerHandle, ServerSystem
 
 VIRTUOSO_VERSION = "7.2.17"
-VIRTUOSO_IMAGE = f"kgconstruct/virtuoso:v{VIRTUOSO_VERSION}"
+VIRTUOSO_IMAGE = f"vortex-rdf-bench/virtuoso:v{VIRTUOSO_VERSION}"
 LOAD_GRAPH_IRI = "http://example.com/graph"   # the HTTP client queries this graph (see client.py)
 _PASSWORD = "root"
 _ISQL = ["isql", "-U", "dba", "-P", _PASSWORD]
 
 
 class Virtuoso(ServerSystem):
+    docker_context = Path(__file__).resolve().parents[2] / "docker" / "virtuoso"
     system_id = "virtuoso/default"
     container = "vortex-rdf-bench-virtuoso"
     image = VIRTUOSO_IMAGE
@@ -51,6 +52,7 @@ class Virtuoso(ServerSystem):
         return output
 
     def build(self, *, source: Path, store: Path, timeout_s: float = 10800.0) -> dict[str, Any]:
+        self.ensure_image()
         source, store = Path(source).resolve(), Path(store).resolve()
         if store.exists() and any(store.iterdir()):
             raise FileExistsError(f"database directory is not empty: {store} (refusing to overwrite)")
@@ -96,6 +98,7 @@ class Virtuoso(ServerSystem):
         return int(response.json()["results"]["bindings"][0]["count"]["value"])
 
     def start(self, *, source: Path | None, store: Path | None) -> ServerHandle:
+        self.ensure_image()
         if store is None:
             raise ValueError("virtuoso/default needs a built database directory")
         started = time.monotonic()

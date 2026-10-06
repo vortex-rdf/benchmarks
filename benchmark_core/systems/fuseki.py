@@ -15,12 +15,13 @@ from benchmark_core.systems import docker, resources
 from benchmark_core.systems.base import ServerHandle, ServerSystem
 
 FUSEKI_VERSION = "6.2.0"
-FUSEKI_IMAGE = f"kgconstruct/fuseki:v{FUSEKI_VERSION}"
+FUSEKI_IMAGE = f"vortex-rdf-bench/fuseki:v{FUSEKI_VERSION}"
 _COMMANDS = {"memory": "--mem --update /ds", "tdb2": "--tdb2 --update --loc /fuseki/databases/DB /ds"}
 _DATABASE = "/fuseki/databases/DB"
 
 
 class Fuseki(ServerSystem):
+    docker_context = Path(__file__).resolve().parents[2] / "docker" / "fuseki"
     port = 3030
     query_path = "/ds/sparql"
 
@@ -59,6 +60,7 @@ class Fuseki(ServerSystem):
         return time.monotonic() - started
 
     def build(self, *, source: Path, store: Path, timeout_s: float = 10800.0) -> dict[str, Any]:
+        self.ensure_image()
         if self.mode != "tdb2":
             raise NotImplementedError("the in-memory dataset has no store to build")
         store = Path(store).resolve()
@@ -79,6 +81,7 @@ class Fuseki(ServerSystem):
         return {"build": {"elapsed_ns": time.perf_counter_ns() - started, "upload_s": upload_s, "memory": memory}}
 
     def start(self, *, source: Path | None, store: Path | None) -> ServerHandle:
+        self.ensure_image()
         if self.mode == "tdb2" and store is None:
             raise ValueError("fuseki/tdb2 needs a built database directory")
         if self.mode == "memory" and source is None:

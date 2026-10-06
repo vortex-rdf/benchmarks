@@ -8,6 +8,7 @@ from DBBench.execution import run as run_dbbench
 from DBBench.manifest import prepare as prepare_dbbench
 from DBBench.schedule import records_sha256, write_schedule
 from benchmark_core.http_runner.campaign import run_declaration
+from benchmark_core.http_runner.report import format_report
 from BSBM.execution import run as run_bsbm
 from BSBM.manifest import prepare as prepare_bsbm
 from BSBM.hdt import generate as generate_bsbm_hdt
@@ -152,6 +153,8 @@ def _parser() -> argparse.ArgumentParser:
     http_run.add_argument("--max-wall-s", type=float, default=0.0, help="stop a system after this wall time (0 disables)")
     http_run.add_argument("--no-drop-caches", action="store_true", help="do not drop the page cache before each system")
     http_run.add_argument("--experiment-id")
+    report = commands.add_parser("report", help="summarize the systems of one run directory")
+    report.add_argument("run_dir", help="<output-root>/<experiment> written by `vortex-rdf-bench run`")
     manifest = commands.add_parser("manifest")
     manifest_commands = manifest.add_subparsers(dest="manifest_command", required=True)
     manifest_validate = manifest_commands.add_parser("validate")
@@ -275,6 +278,9 @@ def main(argv=None) -> int:
                 timeout_s=args.timeout_s, resume=args.resume,
             )
             print(json.dumps({"records": len(records), "written": args.output}, sort_keys=True))
+            return EXIT_SUCCESS
+        if args.command == "report":
+            print(format_report(Path(args.run_dir)))
             return EXIT_SUCCESS
         if args.command == "run":
             outcome = run_declaration(
