@@ -61,7 +61,7 @@
   "dataset": "explore-10k",
   "execution_policy": {
     "measured_runs": 1,
-    "timeout_s": 60.0,
+    "timeout_s": 10.0,
     "warmup_runs": 0
   },
   "experiment": "bsbm/explore-10k/explore-full",
