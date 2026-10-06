@@ -1,0 +1,10 @@
+{
+  "_comment": "Expected identities of the DBBench DBpedia inputs used for the paper.",
+  "dbpedia-en-all": {
+    "dataset": {
+      "sha256": "2a6949c60134a5d453c4b9d2723a7e04a710fdcf5c3ebb34ee3a7f04f262d4ba",
+      "size_bytes": 35559994218,
+      "triple_count": 232541923
+    }
+  }
+}
