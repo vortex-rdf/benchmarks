@@ -18,8 +18,8 @@ class ExperimentDeclarationTests(unittest.TestCase):
         smoke = load_experiment_declaration(self.smoke_path)
         full = load_experiment_declaration(self.full_path)
 
-        self.assertEqual(len(smoke["bindings"]), 10)
-        self.assertEqual(len(smoke["representations"]), 5)
+        self.assertEqual(len(smoke["bindings"]), 22)        # 10 comparison systems + 12 Vortex configurations
+        self.assertEqual(len(smoke["representations"]), 9)  # source, HDT, COTTAS, 6 Vortex layout/index variants
         self.assertEqual(full["bindings"], smoke["bindings"])
         self.assertEqual(full["representations"], smoke["representations"])
         self.assertEqual(smoke["experiment"], "bsbm/explore-1k/explore-smoke")

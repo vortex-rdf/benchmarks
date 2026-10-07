@@ -127,6 +127,7 @@ def main() -> None:
         if installed != (not args.no_pushdown):
             raise SystemExit(f"vortex_rdflib pushdown hook installed={installed}, requested={not args.no_pushdown}")
         identity["sparql_pushdown"] = installed
+        identity["layout"] = str(graph.store.layout)        # "default" has no term codes: string path, no pushdown
         import importlib.metadata as md
         identity["vortex_rdflib"] = md.version("vortex-rdflib")
         identity["vortex_rdf"] = md.version("vortex-rdf")

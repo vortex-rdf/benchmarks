@@ -62,3 +62,16 @@ class SystemTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class VortexLayoutIdTests(unittest.TestCase):
+    def test_layout_index_and_mode_ids(self):
+        from benchmark_core.systems.rdflib_endpoint import RdflibEndpoint, matches
+        for layout in ("dictionary", "default"):
+            for index in ("no-index", "secondary-by-reference", "secondary-by-copy"):
+                for memory in ("", "-memory"):
+                    system = RdflibEndpoint(f"vortex-rdf/{layout}-{index}{memory}")
+                    self.assertEqual((system.engine, system.in_memory, system.pushdown), ("vortex", bool(memory), True))
+        self.assertFalse(RdflibEndpoint("vortex-rdf/dictionary-no-index-no-pushdown").pushdown)
+        self.assertFalse(matches("vortex-rdf/default-no-index-no-pushdown"))
+        self.assertFalse(matches("vortex-rdf/typed-object-no-index"))

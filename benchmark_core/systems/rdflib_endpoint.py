@@ -33,13 +33,17 @@ DEFAULT_VORTEX_RDFLIB = "0.1.3"
 VORTEX_RDF_FOR = {"0.1": "0.10.0", "0.2": "0.11.0"}
 PASSTHROUGH = ("VORTEX_RDF_NATIVE_FILTERS", "VORTEX_RDF_FILTER_FAST", "VORTEX_RDF_DISABLE_CODE_PATH",
                "VORTEX_RDF_DICT_MAX_RESIDENT_BYTES", "VORTEX_RDF_DICT_MAX_RESIDENT_TERMS", "VORTEX_RDF_PUSHDOWN_OPS")
-_VORTEX_ID = re.compile(r"^vortex-rdf/dictionary-secondary-by-(copy|reference)(-memory)?(-no-pushdown)?$")
+_VORTEX_ID = re.compile(r"^vortex-rdf/(dictionary|default)-(secondary-by-copy|secondary-by-reference|no-index)"
+                        r"(-memory)?(-no-pushdown)?$")
 PORT = 7880
 SETTLE_WAIT_S = 30.0
 
 
 def matches(system_id: str) -> bool:
-    return bool(_VORTEX_ID.match(system_id)) or system_id in {"rdflib/default", "pycottas/default",
+    vortex = _VORTEX_ID.match(system_id)
+    if vortex and vortex.group(1) == "default" and vortex.group(4):
+        return False        # the default (string) layout has no pushdown to disable
+    return bool(vortex) or system_id in {"rdflib/default", "pycottas/default",
                                                              "hdt-rdflib/optimized-in-memory"}
 
 
@@ -78,7 +82,7 @@ class RdflibEndpoint(ServerSystem):
         self.query_timeout_s: float | None = None     # set by the campaign; enables server-side cancellation
         vortex = _VORTEX_ID.match(system_id)
         if vortex:
-            self.engine, self.in_memory, self.pushdown = "vortex", bool(vortex.group(2)), not vortex.group(3)
+            self.engine, self.in_memory, self.pushdown = "vortex", bool(vortex.group(3)), not vortex.group(4)
         else:
             self.engine = {"rdflib/default": "rdflib", "pycottas/default": "cottas",
                            "hdt-rdflib/optimized-in-memory": "hdt"}[system_id]
