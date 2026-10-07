@@ -131,3 +131,12 @@ class HttpRunnerTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FingerprintColumnOrderTests(unittest.TestCase):
+    def test_select_fingerprint_ignores_column_order(self):
+        from benchmark_core.http_runner.normalize import _fingerprint
+        a = {'result_kind': 'select', 'variables': ['x', 'y'], 'ordered': False, 'rows': [[1, 2], [3, 0]]}
+        b = {'result_kind': 'select', 'variables': ['y', 'x'], 'ordered': False, 'rows': [[0, 3], [2, 1]]}
+        self.assertEqual(_fingerprint(a), _fingerprint(b))
+        self.assertNotEqual(_fingerprint(a), _fingerprint({**b, 'rows': [[0, 1], [2, 3]]}))

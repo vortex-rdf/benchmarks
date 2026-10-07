@@ -60,6 +60,15 @@ def _query_has_order_by(query: str) -> bool:
 
 
 def _fingerprint(payload: dict[str, Any]) -> str:
+    if payload.get('result_kind') == 'select':
+        # Column order is not part of a SELECT result (SELECT * leaves it to the engine): fingerprint the
+        # columns in variable-name order, and re-sort the rows of an unordered result after the permutation.
+        variables = payload['variables']
+        order = sorted(range(len(variables)), key=lambda i: variables[i])
+        rows = [[row[i] for i in order] for row in payload['rows']]
+        if not payload.get('ordered'):
+            rows.sort(key=_canonical_json)
+        payload = {**payload, 'variables': [variables[i] for i in order], 'rows': rows}
     return hashlib.sha256(_canonical_json(payload).encode('utf-8')).hexdigest()
 
 
