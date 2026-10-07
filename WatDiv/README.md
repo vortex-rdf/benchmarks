@@ -36,6 +36,11 @@ python -m benchmark_core.cli watdiv run \
   --warmup-runs 0 --measured-runs 1 --timeout-s 10
 ```
 
+For the paper's measurement over SPARQL HTTP (all 14 systems, one protocol), use the pre-expanded
+schedules (`--selection smoke|qualification|full`) with `vortex-rdf-bench run`; see the WatDiv section of
+[REPRODUCING.md](../REPRODUCING.md) and `WatDiv/tools/run_10m_campaign.sh`. A query's template is
+`(native_id - 1) // 100` (every stress template has 100 consecutive ids), recorded as `template_id`.
+
 The benchmark-owned experiment declarations are under `WatDiv/experiments/`.
 They bind the RDF source, HDT, COTTAS, and the two indexed Vortex-RDF variants
 to stable system identifiers. They do not define a semantic baseline because

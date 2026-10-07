@@ -1,4 +1,4 @@
-# Reproducing the paper benchmarks (BSBM and DBpedia)
+# Reproducing the paper benchmarks (BSBM, DBpedia and WatDiv)
 
 This guide takes you from a fresh clone to benchmark numbers for **Vortex-RDF** (and, if you want, the
 13 other systems of the paper), measured with one protocol: every system answers SPARQL over HTTP.
@@ -6,6 +6,7 @@ This guide takes you from a fresh clone to benchmark numbers for **Vortex-RDF** 
 * [Quick start: test Vortex on BSBM 10K](#quick-start-test-vortex-on-bsbm-10k) (about 30 minutes of work)
 * [Testing another vortex-rdflib version, or an ablation](#testing-another-vortex-rdflib-version-or-an-ablation)
 * [BSBM 100K and DBpedia](#bsbm-100k-and-dbpedia)
+* [WatDiv 10M](#watdiv-10m)
 * [Reproducing all 14 systems](#reproducing-all-14-systems)
 * [What is measured](#what-is-measured-the-protocol) · [Troubleshooting](#troubleshooting)
 
@@ -197,6 +198,34 @@ not yet been run end to end by a clean checkout.
    picks this from the manifest. DBpedia file-backed stores need the large dictionary to stay readable; see
    the vortex-rdflib notes on `VORTEX_RDF_DICT_MAX_RESIDENT_BYTES`.
 
+## WatDiv 10M
+
+Data: the official WatDiv 10M dataset (`watdiv.10M.nt`, 10,916,457 triples) and the stress-100 workload
+(`watdiv-stress-100/`) from the [WatDiv project page](https://dsg.uwaterloo.ca/watdiv/), placed under
+`WatDiv/data/`. The workload has 124 query templates with 100 instances each. Its six streams (`warmup`,
+`test.1`–`test.5`) are permutations of the same 12,400 queries. All queries are basic graph patterns with
+1–12 triple patterns. Nine templates contain a self-loop pattern (`?x :p ?x`).
+
+```bash
+# representations (HDT, COTTAS, the two Vortex layouts), one per call
+vortex-rdf-bench watdiv representation build --dataset watdiv-10m --representation vortex-by-reference
+# ... and hdt, cottas, vortex-by-copy
+
+# schedules: smoke (124, one per template), qualification (124 warm-up + 1,240), full (124 warm-up + 12,400)
+vortex-rdf-bench watdiv prepare --dataset watdiv-10m --selection full \
+  --output WatDiv/data/manifests/watdiv-10m-full.json
+
+# all 14 systems in sequence (resumable); or SYSTEMS="vortex-rdf/..." for a subset
+MAX_WALL_S=14400 WatDiv/tools/run_10m_campaign.sh full
+vortex-rdf-bench report WatDiv/data/runs/watdiv-10m-full-vrl0.1.3
+```
+
+The protocol is the same as for BSBM. A template is quarantined after 3 measured timeouts. Each system has a
+wall-clock safety cap (`MAX_WALL_S`). The paper run (vortex-rdflib 0.1.3) took 14.4 h for the 14 systems:
+30–90 min for most systems, about 2 h for Comunica and COTTAS. Comunica and COTTAS lose most templates to
+the quarantine. HDT-RDFLib crashes about 270 times; each crash is restarted, and it returns wrong result
+counts on 7 templates.
+
 ## Reproducing all 14 systems
 
 The paper's systems and their identifiers:
@@ -244,7 +273,16 @@ DBpedia roughly 20 minutes per Vortex configuration plus the slow systems' timeo
   first and are recorded but not reported.
 * **Timeouts.** A query that exceeds the limit is recorded as `timeout`. The client is restarted; for
   servers that cannot cancel a running query the runner waits (untimed) until the server is idle again, or
-  restarts it, before the next attempt. Comunica enforces the limit server-side (`-t`).
+  restarts it, before the next attempt. Two servers also stop the query themselves, just after the client
+  timeout (so the client always records the timeout first):
+  * Comunica: `-t` = timeout + 1 s; it kills and replaces its query worker.
+  * The rdflib endpoint: it cancels the running query at timeout + 0.5 s (`QUERY_DEADLINE_S`). It raises an
+    exception in the query thread and, for pycottas, interrupts DuckDB. A long call inside rdflib-hdt's C++
+    code cannot be cancelled; that server is restarted instead. Set `VORTEX_RDF_BENCH_SERVER_DEADLINE=0`
+    to turn the server-side cancel off.
+* **Crashed servers.** If a container exits during a run (rdflib-hdt segfaults on some WatDiv sequences),
+  the query is recorded as `engine_error`, the container is restarted (untimed) and the run continues.
+  Restarts are listed in `results.summary.json` (`server_restarts`).
 * **Quarantine.** After `--quarantine-threshold` measured timeouts of one template the rest of that
   template is `skipped` (BSBM: 3). Means over successful attempts therefore describe different query sets
   for different systems; compare per template or on common successes.
@@ -252,8 +290,9 @@ DBpedia roughly 20 minutes per Vortex configuration plus the slow systems' timeo
   (`memory.stat`/`memory.current`, sampled every 10 ms), reported per phase. For the rdflib-based systems
   this includes the Python process.
 * **Cold start.** The page cache is dropped before every system (`--no-drop-caches` skips it).
-* **Correctness.** BSBM results are fingerprinted (order-insensitive unless the query has `ORDER BY`) and
-  can be compared across systems; DBpedia is count-only.
+* **Correctness.** BSBM and WatDiv results are fingerprinted (order-insensitive unless the query has
+  `ORDER BY`; column order is ignored, since `SELECT *` leaves it to the engine) and can be compared across
+  systems. DBpedia is count-only.
 * **BSBM query mix.** The official BSBM V3 Explore mix is used unchanged (bsbm-tools
   `queries/explore/querymix.txt`: `1 2 2 3 2 2 4 2 2 5 7 7 5 7 7 8 9 9 8 9 9 10 10 11 12`). Q06 (the regex
   query) is not part of it: BSBM 3.0 removed it from the Explore mix. Q09 is a **DESCRIBE** query, twice per
