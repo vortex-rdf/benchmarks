@@ -59,6 +59,20 @@ def _query_has_order_by(query: str) -> bool:
     return re.search(r'\bORDER\s+BY\b', without_comments, re.I) is not None
 
 
+def _projected_variables(query: str) -> list[str]:
+    """Variables of a SELECT clause: bare ?x and (expr AS ?x); SELECT * gives []."""
+    # ponytail: regex, not a parser; enough for the projections in BSBM/WatDiv/DBpedia.
+    without_comments = re.sub(r'#[^\r\n]*', ' ', query)
+    clause = re.search(r'\bSELECT\b(.*?)(?:\bWHERE\b|\bFROM\b|\{)', without_comments, re.I | re.S)
+    if clause is None:
+        return []
+    projection = clause.group(1)
+    aliases = re.findall(r'\bAS\s+[?$](\w+)', projection, re.I)
+    while re.search(r'\([^()]*\)', projection):
+        projection = re.sub(r'\([^()]*\)', ' ', projection)
+    return re.findall(r'[?$](\w+)', projection) + aliases  # order is irrelevant: fingerprints sort columns
+
+
 def _fingerprint(payload: dict[str, Any]) -> str:
     if payload.get('result_kind') == 'select':
         # Column order is not part of a SELECT result (SELECT * leaves it to the engine): fingerprint the
@@ -269,6 +283,9 @@ def normalize_sparql_json_result(document: dict,
         raise ValueError('SPARQL SELECT JSON requires head and results')
     variables = head.get('vars')
     bindings = results.get('bindings')
+    if variables is None and bindings == []:
+        # Comunica omits head.vars on empty results; recover them from the query.
+        variables = _projected_variables(query)
     if not isinstance(variables, list) or not all(
             isinstance(variable, str) for variable in variables):
         raise ValueError('SPARQL SELECT variables must be strings')

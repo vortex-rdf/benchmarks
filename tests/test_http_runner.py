@@ -140,3 +140,9 @@ class FingerprintColumnOrderTests(unittest.TestCase):
         b = {'result_kind': 'select', 'variables': ['y', 'x'], 'ordered': False, 'rows': [[0, 3], [2, 1]]}
         self.assertEqual(_fingerprint(a), _fingerprint(b))
         self.assertNotEqual(_fingerprint(a), _fingerprint({**b, 'rows': [[0, 1], [2, 3]]}))
+
+    def test_empty_result_without_head_vars_matches_spec_response(self):
+        query = 'SELECT ?p ?v (COUNT(?x) AS ?n) WHERE { { <a> ?p ?v } UNION { ?x ?p <a> } }'
+        spec = normalize_sparql_json_result({'head': {'vars': ['p', 'v', 'n']}, 'results': {'bindings': []}}, query)
+        comunica = normalize_sparql_json_result({'head': {}, 'results': {'bindings': []}}, query)
+        self.assertEqual(spec['result_fingerprint'], comunica['result_fingerprint'])
