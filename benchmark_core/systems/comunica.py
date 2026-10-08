@@ -43,10 +43,14 @@ class ComunicaHdt(ServerSystem):
         # Comunica kills its worker at the server timeout and starts a new one. Set it one second past the
         # client timeout so that the client always records the timeout (not the killed connection).
         timeout = math.ceil(self.query_timeout_s) + 1 if self.query_timeout_s else 60
+        volumes = [f"{artifact}:/data/dataset.hdt:ro"]
+        index = artifact.with_name(artifact.name + ".index.v1-1")
+        if index.is_file():     # without the prebuilt index HDT rebuilds it in memory at every start
+            volumes.append(f"{index}:/data/dataset.hdt.index.v1-1:ro")
         started = time.monotonic()
         docker.run_detached(self.container, self.image,
                             ["hdt@/data/dataset.hdt", "-p", "3000", "-w", "1", "-t", str(timeout)],
-                            ports={self.port: 3000}, volumes=[f"{artifact}:/data/dataset.hdt:ro"])
+                            ports={self.port: 3000}, volumes=volumes)
         docker.wait_until(self.ready, timeout_s=self.ready_timeout_s,
                           alive=lambda: docker.is_running(self.container), what="comunica")
         return ServerHandle(self.system_id, self.container, self.endpoint, time.monotonic() - started,
