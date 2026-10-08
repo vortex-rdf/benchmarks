@@ -220,7 +220,8 @@ MAX_WALL_S=14400 WatDiv/tools/run_10m_campaign.sh full
 vortex-rdf-bench report WatDiv/data/runs/watdiv-10m-full-vrl0.1.3
 ```
 
-The protocol is the same as for BSBM. A template is quarantined after 3 measured timeouts. Each system has a
+The protocol is the same as for BSBM. A template is quarantined after 3 timeouts (the 10M paper run counted
+measured timeouts only; warm-up timeouts count since 2026-10-08). Each system has a
 wall-clock safety cap (`MAX_WALL_S`). The paper run (vortex-rdflib 0.1.3) took 14.4 h for the 14 systems:
 30–90 min for most systems, about 2 h for Comunica and COTTAS. Comunica and COTTAS lose most templates to
 the quarantine. HDT-RDFLib crashes about 270 times; each crash is restarted, and it returns wrong result
@@ -283,7 +284,7 @@ DBpedia roughly 20 minutes per Vortex configuration plus the slow systems' timeo
 * **Crashed servers.** If a container exits during a run (rdflib-hdt segfaults on some WatDiv sequences),
   the query is recorded as `engine_error`, the container is restarted (untimed) and the run continues.
   Restarts are listed in `results.summary.json` (`server_restarts`).
-* **Quarantine.** After `--quarantine-threshold` measured timeouts of one template the rest of that
+* **Quarantine.** After `--quarantine-threshold` timeouts of one template, warm-up or measured, the rest of that
   template is `skipped` (BSBM: 3). Means over successful attempts therefore describe different query sets
   for different systems; compare per template or on common successes.
 * **Memory.** Peak anonymous, file-cache and total memory of the **server container** from cgroup v2

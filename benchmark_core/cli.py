@@ -152,7 +152,7 @@ def _parser() -> argparse.ArgumentParser:
     http_run.add_argument("--timeout-s", type=float, help="per-query limit; default from the declaration")
     http_run.add_argument("--correctness", choices=["auto", "fingerprint", "count-only"], default="auto")
     http_run.add_argument("--quarantine-threshold", type=int, default=3,
-                          help="measured timeouts per query template before the template is skipped (0 disables)")
+                          help="timeouts (warm-up or measured) per query template before the template is skipped (0 disables)")
     http_run.add_argument("--max-wall-s", type=float, default=0.0, help="stop a system after this wall time (0 disables)")
     http_run.add_argument("--no-drop-caches", action="store_true", help="do not drop the page cache before each system")
     http_run.add_argument("--experiment-id")

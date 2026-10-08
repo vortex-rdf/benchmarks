@@ -10,7 +10,7 @@ Protocol (identical for every system):
   response body has been read (see ``worker.py``); counting and fingerprinting are untimed;
 * a manifest with ``stream_phase``/``stream_position`` fields is a pre-expanded schedule and is
   executed in stream order; otherwise every query runs ``warmup_runs`` then ``measured_runs`` times;
-* after ``quarantine_threshold`` measured timeouts of one template (``bsbm_template_id`` or ``template_id``) the
+* after ``quarantine_threshold`` timeouts (warm-up or measured) of one template (``bsbm_template_id`` or ``template_id``) the
   remaining attempts of that template are recorded as ``skipped`` and not sent;
 * a wall-clock budget stops the run and records ``budget_exhausted`` instead of hanging.
 """
@@ -43,7 +43,7 @@ class RunProfile:
     correctness_mode: str = "fingerprint"      # fingerprint | count-only
     warmup_runs: int = 0                         # only for manifests without a pre-expanded schedule
     measured_runs: int = 1
-    quarantine_threshold: int = 3                # measured timeouts per template; 0 disables
+    quarantine_threshold: int = 3                # timeouts per template (warm-up or measured); 0 disables
     max_wall_s: float = 0.0                      # 0 disables the wall-clock budget
     startup_timeout_s: float = 120.0
     skip_after_warmup_failure: bool = True       # skip a query's measured runs after a failed warm-up
@@ -231,13 +231,13 @@ def run_system(*, manifest: Mapping[str, Any], system: str, experiment_id: str, 
                                        and "ConnectionError" in str(record.get("error_message")))
                     if (record["status"] == "timeout" or lost_connection) and after_timeout is not None:
                         after_timeout()
-                    if (phase == "measured" and record["status"] == "timeout" and selector is not None
+                    if (record["status"] == "timeout" and selector is not None
                             and profile.quarantine_threshold > 0 and not profile.force_include):
                         count = timeout_counts[selector] = timeout_counts.get(selector, 0) + 1
                         if count >= profile.quarantine_threshold and selector not in quarantined:
                             quarantined[selector] = {
                                 "reason": f"{selector[0]}={selector[1]} reached {profile.quarantine_threshold} "
-                                          "measured query timeouts in the current system execution",
+                                          "query timeouts in the current system execution",
                                 "timeout_count": count, "threshold": profile.quarantine_threshold,
                                 "activated_at_attempt": ordinal}
                     if phase == "warmup" and profile.skip_after_warmup_failure and record["status"] != "ok":
