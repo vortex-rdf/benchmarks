@@ -129,6 +129,14 @@ class RdflibEndpoint(ServerSystem):
         return ServerHandle(self.system_id, self.container, self.endpoint, time.monotonic() - started,
                             extra={"identity": identity, "tuning_environment": environment})
 
+    def ready(self) -> bool:
+        # ASK {} goes through SPARQL parsing, evaluation and serialization without touching the store;
+        # ASK { ?s ?p ?o } makes pycottas scan the file, past the server deadline on BSBM 100K.
+        response = requests.post(self.endpoint, data={"query": "ASK {}"},
+                                 headers={"Accept": "application/sparql-results+json"}, timeout=30)
+        response.raise_for_status()
+        return response.json()["boolean"] is True
+
     def idle_probe(self) -> None:
         # The single event loop only answers /ready when no query is running. An ASK over all triples is
         # not trivial for every store (pycottas scans the whole file for ?s ?p ?o).
