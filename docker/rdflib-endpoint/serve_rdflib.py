@@ -83,6 +83,18 @@ class DeadlineMiddleware:
                     continue
 
 
+ENGINE_MODULES = {"rdflib": ["rdflib"], "vortex": ["rdflib", "vortex_rdflib"],
+                  "cottas": ["rdflib", "pycottas.cottas_store"], "hdt": ["rdflib", "rdflib_hdt"]}
+
+
+def import_engine(engine: str) -> None:
+    """Import the engine's Python modules (and their native libraries), so that opening the store can be timed
+    on its own."""
+    import importlib
+    for module in ENGINE_MODULES[engine]:
+        importlib.import_module(module)
+
+
 def build_graph(engine: str, store: str, layout: str, in_memory: bool):
     from rdflib import Graph
     if engine == "rdflib":
@@ -117,11 +129,15 @@ def main() -> None:
         os.environ["VORTEX_RDF_DISABLE_PUSHDOWN"] = "1"   # read when the store registers its hook
 
     started = time.monotonic()
+    import_engine(args.engine)
+    imported_s = time.monotonic() - started
+    started = time.monotonic()
     graph = build_graph(args.engine, args.store, args.layout, args.in_memory)
     opened_s = time.monotonic() - started
 
     identity = {"worker": "rdflib-endpoint", "engine": args.engine, "store": os.path.basename(args.store),
-                "in_memory": bool(args.in_memory), "open_s": round(opened_s, 3)}
+                "in_memory": bool(args.in_memory), "import_s": round(imported_s, 3),
+                "open_s": round(opened_s, 3)}       # open_s: the store constructor only, after the imports
     if args.engine == "vortex":
         from rdflib.plugins.sparql import CUSTOM_EVALS
         from vortex_rdflib import pushdown

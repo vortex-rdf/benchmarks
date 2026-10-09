@@ -6,6 +6,7 @@ record provenance and stop the server. Systems never run concurrently.
 """
 from __future__ import annotations
 
+import dataclasses
 import json
 import re
 import subprocess
@@ -55,7 +56,7 @@ def run_declaration(*, declaration: Path, benchmark_root: Path, manifest_path: P
                     output_root: Path, store_root: Path, timeout_s: float | None = None,
                     correctness: str = "auto", quarantine_threshold: int = 3, max_wall_s: float = 0.0,
                     drop_caches: bool = True, experiment_id: str | None = None,
-                    repository: Path | None = None) -> dict[str, Any]:
+                    repository: Path | None = None, in_process: bool = False) -> dict[str, Any]:
     benchmark_root = Path(benchmark_root).resolve()
     declared = load_experiment_declaration(declaration)
     bindings = {item["system"]: item["representation"] for item in declared["bindings"]}
@@ -74,7 +75,7 @@ def run_declaration(*, declaration: Path, benchmark_root: Path, manifest_path: P
     plan = {"schema": "http-campaign-plan-v1", "experiment_id": experiment, "declaration": str(Path(declaration).resolve()),
             "declaration_sha256": sha256_file(Path(declaration)), "manifest": str(Path(manifest_path).resolve()),
             "manifest_sha256": manifest["_sha256"], "systems": selected, "profile": profile.to_json(),
-            "drop_caches": drop_caches,
+            "drop_caches": drop_caches, "transport": "in-process" if in_process else "http",
             "provenance": provenance.collect(repository or Path(__file__).resolve().parents[2])}
     plan_path = run_dir / "campaign-plan.json"
     if not plan_path.exists():
@@ -82,18 +83,25 @@ def run_declaration(*, declaration: Path, benchmark_root: Path, manifest_path: P
     results: dict[str, Any] = {}
     for system_id in selected:
         results[system_id] = _run_one(system_id, bindings[system_id], declared, benchmark_root, manifest, run_dir,
-                                      Path(store_root), profile, experiment, drop_caches)
+                                      Path(store_root), profile, experiment, drop_caches, in_process)
     return {"experiment_id": experiment, "run_dir": str(run_dir), "systems": results}
 
 
 def _run_one(system_id: str, representation: str, declared: dict[str, Any], root: Path, manifest: dict[str, Any],
-             run_dir: Path, store_root: Path, profile: RunProfile, experiment: str, drop_caches: bool) -> dict[str, Any]:
+             run_dir: Path, store_root: Path, profile: RunProfile, experiment: str, drop_caches: bool,
+             in_process: bool = False) -> dict[str, Any]:
     directory = run_dir / safe_name(system_id)
     output = directory / "results.jsonl"
     if output.exists():
         return {"status": "exists", "output": str(output)}   # never overwrite a finished result
     directory.mkdir(parents=True, exist_ok=True)
     system = get_system(system_id)
+    if in_process:
+        if not hasattr(system, "worker_command"):
+            raise ValueError(f"{system_id} has no in-process mode (only the rdflib-endpoint systems do)")
+        system.in_process = True
+        # A new worker reopens (RDFLib: re-parses) the store; allow the store's own startup limit for that.
+        profile = dataclasses.replace(profile, startup_timeout_s=system.ready_timeout_s)
     _, rep_files = _representation_files(root, declared["representations"][representation])
     source = None
     if "rdf/source" in declared["representations"]:
@@ -143,6 +151,7 @@ def _run_one(system_id: str, representation: str, declared: dict[str, Any], root
         summary = run_system(
             manifest=manifest, system=system_id, experiment_id=experiment, endpoint=handle.endpoint,
             container=handle.container, output=output, profile=profile, after_timeout=after_timeout,
+            worker_command=system.worker_command(profile.timeout_s) if in_process else None,
             extra_summary={"load": {"start_to_ready_s": handle.start_to_ready_s, "load_s": handle.load_s,
                                     "page_cache": cache},
                            "server": system.provenance(), "server_extra": handle.extra, "build": build_info,

@@ -14,6 +14,7 @@ Selected ``VORTEX_RDF_*`` tuning variables of the calling environment are passed
 """
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
@@ -27,6 +28,7 @@ from benchmark_core.systems import docker
 from benchmark_core.systems.base import ServerHandle, ServerSystem
 
 DOCKER_CONTEXT = Path(__file__).resolve().parents[2] / "docker" / "rdflib-endpoint"
+BENCHMARK_CORE = Path(__file__).resolve().parents[1]      # mounted into the container for in-process workers
 IMAGE_REPOSITORY = "vortex-rdf-bench/rdflib-endpoint"
 DEFAULT_VORTEX_RDFLIB = "0.1.3"
 # vortex-rdflib minor version -> the vortex-rdf it requires
@@ -83,6 +85,7 @@ class RdflibEndpoint(ServerSystem):
         self.ready_timeout_s = float(os.environ.get("VORTEX_RDF_BENCH_READY_TIMEOUT_S", "3600"))
         self._last: tuple[Path | None, Path | None] | None = None
         self.query_timeout_s: float | None = None     # set by the campaign; enables server-side cancellation
+        self.in_process = False     # set by the campaign: library mode, the engine runs in a worker in the container
         vortex = _VORTEX_ID.match(system_id)
         if vortex:
             self.engine, self.in_memory, self.pushdown = "vortex", bool(vortex.group(3)), not vortex.group(4)
@@ -130,6 +133,18 @@ class RdflibEndpoint(ServerSystem):
         else:
             ensure_image(self.image, self.vortex_rdflib_version)
         environment = {name: os.environ[name] for name in PASSTHROUGH if name in os.environ}
+        if self.in_process:
+            # Same image and mounts; the container only idles, and the runner starts the engine inside it with
+            # ``docker exec`` (see worker_command), so its memory is still charged to this container.
+            self._store_path = f"/data/{artifact.name}"
+            started = time.monotonic()
+            docker.run_detached(self.container, self.image, ["infinity"], environment=environment,
+                                volumes=[f"{artifact.parent}:/data:ro", f"{BENCHMARK_CORE}:/bench/benchmark_core:ro",
+                                         f"{DOCKER_CONTEXT}:/bench/server:ro"],
+                                extra=["--entrypoint", "sleep"])
+            return ServerHandle(self.system_id, self.container, f"inproc://{self.container}",
+                                time.monotonic() - started, extra={"transport": "in-process",
+                                                                    "tuning_environment": environment})
         if self.query_timeout_s and os.environ.get("VORTEX_RDF_BENCH_SERVER_DEADLINE", "1") != "0":   # cancel server-side shortly after the client has given up
             environment["QUERY_DEADLINE_S"] = f"{self.query_timeout_s + 0.5:g}"
         started = time.monotonic()
@@ -144,6 +159,14 @@ class RdflibEndpoint(ServerSystem):
         docker.wait_until(self.ready, timeout_s=self.ready_timeout_s, alive=alive, what=self.system_id)
         return ServerHandle(self.system_id, self.container, self.endpoint, time.monotonic() - started,
                             extra={"identity": identity, "tuning_environment": environment})
+
+    def worker_command(self, timeout_s: float) -> list[str]:
+        """argv that starts one in-process worker (``benchmark_core.http_runner.inproc``) in the container."""
+        config = {"engine": self.engine, "store": self._store_path, "in_memory": self.in_memory,
+                  "no_pushdown": not self.pushdown, "deadline_s": timeout_s + 0.5,
+                  "server_dir": "/bench/server"}      # the repository's serve_rdflib.py, not the image's copy
+        return ["docker", "exec", "-i", "-e", "PYTHONPATH=/bench", self.container,
+                "python", "-m", "benchmark_core.http_runner.inproc", json.dumps(config)]
 
     def ready(self) -> bool:
         # ASK {} goes through SPARQL parsing, evaluation and serialization without touching the store;
@@ -164,6 +187,10 @@ class RdflibEndpoint(ServerSystem):
         Engines that reopen in seconds (Vortex, COTTAS, HDT) wait at most ``SETTLE_WAIT_S``; RDFLib re-parses
         the whole dataset on restart, so it waits for the query to finish (up to ten minutes).
         """
+        if self.in_process:
+            # ponytail: fixed wait; the timed-out worker ends itself at deadline_s (0.5 s past the runner's timeout)
+            time.sleep(1.0)
+            return True
         wait = timeout_s if timeout_s is not None else (600.0 if self.engine == "rdflib" else SETTLE_WAIT_S)
         if super().settle(timeout_s=wait):
             return True

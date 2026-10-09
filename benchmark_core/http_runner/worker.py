@@ -65,7 +65,10 @@ class HttpQueryWorker:
                  timeout_s: float, startup_timeout_s: float = 120.0,
                  correctness_mode: str = "fingerprint", result_timeout_s: float | None = None,
                  direct: bool = True, tcp_quickack: bool = True,
-                 request_max_rows: int | None = None, python: str | None = None):
+                 request_max_rows: int | None = None, python: str | None = None,
+                 command: list[str] | None = None):
+        """``command``: start an in-process worker instead of the HTTP client (see ``inproc.py``); its ready
+        messages (import and open times of every start) are kept in ``ready_messages``."""
         if timeout_s <= 0 or startup_timeout_s <= 0:
             raise ValueError("worker timeouts must be positive")
         self._config = {"endpoint": endpoint, "container": container, "system": system,
@@ -86,6 +89,8 @@ class HttpQueryWorker:
         self._stderr_tail: collections.deque = collections.deque(maxlen=200)
         self._stderr_thread: threading.Thread | None = None
         self._memory = ContainerCgroupMemory(container) if container else None
+        self._command = command
+        self.ready_messages: list[dict[str, Any]] = []
         self.recovery_restarts = 0
 
     # ---- memory ----------------------------------------------------------------------
@@ -179,8 +184,10 @@ class HttpQueryWorker:
             raise RuntimeError("persistent worker is already open")
         self._stdout_buffer = bytearray()
         self._stderr_tail.clear()
+        argv = (self._command if self._command is not None
+                else [self._python, "-m", "benchmark_core.http_runner.client", json.dumps(self._config)])
         self._process = subprocess.Popen(
-            [self._python, "-m", "benchmark_core.http_runner.client", json.dumps(self._config)],
+            argv,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=0,
         )
         self._stderr_thread = threading.Thread(target=self._drain_stderr, args=(self._process,), daemon=True)
@@ -189,9 +196,13 @@ class HttpQueryWorker:
             message = self._read_message(self._startup_timeout_s, "startup")
             if message is None:
                 raise RuntimeError("persistent worker startup timed out")
-            expected = {"kind": "ready", "protocol": PROTOCOL, "worker": "sparql-http", "endpoint": self._endpoint}
-            if message != expected:
+            if self._command is not None:
+                valid = (message.get("kind"), message.get("protocol"), message.get("worker")) == ("ready", PROTOCOL, "inproc")
+            else:
+                valid = message == {"kind": "ready", "protocol": PROTOCOL, "worker": "sparql-http", "endpoint": self._endpoint}
+            if not valid:
                 raise RuntimeError(f"invalid persistent worker ready response: {message!r}")
+            self.ready_messages.append(message)
         except BaseException:
             self._force_stop()
             raise

@@ -156,6 +156,9 @@ def _parser() -> argparse.ArgumentParser:
     http_run.add_argument("--max-wall-s", type=float, default=0.0, help="stop a system after this wall time (0 disables)")
     http_run.add_argument("--no-drop-caches", action="store_true", help="do not drop the page cache before each system")
     http_run.add_argument("--experiment-id")
+    http_run.add_argument("--in-process", action="store_true",
+                          help="library mode: run the engine in a worker process inside the system's container, "
+                               "without HTTP (rdflib-endpoint systems only)")
     report = commands.add_parser("report", help="summarize the systems of one run directory")
     report.add_argument("run_dir", help="<output-root>/<experiment> written by `vortex-rdf-bench run`")
     manifest = commands.add_parser("manifest")
@@ -292,7 +295,7 @@ def main(argv=None) -> int:
                 manifest_path=Path(args.manifest), systems=args.system, output_root=Path(args.output_root),
                 store_root=Path(args.store_root), timeout_s=args.timeout_s, correctness=args.correctness,
                 quarantine_threshold=args.quarantine_threshold, max_wall_s=args.max_wall_s,
-                drop_caches=not args.no_drop_caches, experiment_id=args.experiment_id)
+                drop_caches=not args.no_drop_caches, experiment_id=args.experiment_id, in_process=args.in_process)
             print(json.dumps(outcome, sort_keys=True, default=str))
             return EXIT_SUCCESS
         if args.command == "dbbench" and args.dbbench_command == "schedule":

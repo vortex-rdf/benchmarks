@@ -136,6 +136,7 @@ def run_system(*, manifest: Mapping[str, Any], system: str, experiment_id: str, 
                container: str | None, output: Path, profile: RunProfile,
                after_timeout: Callable[[], None] | None = None,
                extra_summary: Mapping[str, Any] | None = None,
+               worker_command: list[str] | None = None,
                progress: Callable[[str], None] = lambda line: print(line, flush=True)) -> dict[str, Any]:
     """Execute ``manifest`` against ``endpoint`` and return the run summary.
 
@@ -148,7 +149,7 @@ def run_system(*, manifest: Mapping[str, Any], system: str, experiment_id: str, 
     total = len(attempts)
     worker = HttpQueryWorker(endpoint=endpoint, container=container, system=system,
                              timeout_s=profile.timeout_s, startup_timeout_s=profile.startup_timeout_s,
-                             correctness_mode=profile.correctness_mode)
+                             correctness_mode=profile.correctness_mode, command=worker_command)
     sampler = PhaseAwareMemorySampler(_MemoryProbe(worker), "docker-container-cgroup-v2") if container else None
     part = output.with_name(output.name + ".part")
     counts: dict[str, int] = {}
@@ -261,6 +262,7 @@ def run_system(*, manifest: Mapping[str, Any], system: str, experiment_id: str, 
         "status_counts": counts, "total_wall_ns": time.perf_counter_ns() - started_ns,
         "stages_ns": stage_ns, "budget": budget, "phase_memory_metrics": memory_metrics,
         "worker_restarts": worker.recovery_restarts,
+        "worker_starts": worker.ready_messages,
         "manifest_sha256": manifest.get("_sha256"), "records_sha256": sha256_file(output),
         **(dict(extra_summary) if extra_summary else {}),
     }
