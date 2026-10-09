@@ -6,7 +6,7 @@ HTTP layer, query parsing and result serialization are identical and only the st
 System identifiers (as in the experiment declarations):
 
 * ``vortex-rdf/dictionary-secondary-by-{copy,reference}[-memory][-no-pushdown]``
-* ``rdflib/default``  ``pycottas/default``  ``hdt-rdflib/optimized-in-memory``
+* ``rdflib/default``  ``pycottas/default``  ``pycottas/endpoint`` (COTTAS's own router)  ``hdt-rdflib/optimized-in-memory``
 
 ``VORTEX_RDFLIB_VERSION`` (default 0.1.3) selects the image ``vortex-rdf-bench/rdflib-endpoint:vrl-<version>``;
 it is built from ``docker/rdflib-endpoint`` on first use. ``VORTEX_RDFLIB_IMAGE`` overrides the image name.
@@ -39,11 +39,14 @@ PORT = 7880
 SETTLE_WAIT_S = 30.0
 
 
+PYCOTTAS_ENDPOINT = "0.5.3"
+
+
 def matches(system_id: str) -> bool:
     vortex = _VORTEX_ID.match(system_id)
     if vortex and vortex.group(1) == "default" and vortex.group(4):
         return False        # the default (string) layout has no pushdown to disable
-    return bool(vortex) or system_id in {"rdflib/default", "pycottas/default",
+    return bool(vortex) or system_id in {"rdflib/default", "pycottas/default", "pycottas/endpoint",
                                                              "hdt-rdflib/optimized-in-memory"}
 
 
@@ -84,9 +87,13 @@ class RdflibEndpoint(ServerSystem):
         if vortex:
             self.engine, self.in_memory, self.pushdown = "vortex", bool(vortex.group(3)), not vortex.group(4)
         else:
-            self.engine = {"rdflib/default": "rdflib", "pycottas/default": "cottas",
+            self.engine = {"rdflib/default": "rdflib", "pycottas/default": "cottas", "pycottas/endpoint": "cottas",
                            "hdt-rdflib/optimized-in-memory": "hdt"}[system_id]
             self.in_memory, self.pushdown = False, True
+        # pycottas/endpoint: COTTAS's own router (pycottas-endpoint) on the same base image and middleware.
+        self.router = "pycottas-endpoint" if system_id == "pycottas/endpoint" else "rdflib-endpoint"
+        if self.router == "pycottas-endpoint":
+            self.base_image, self.image = self.image, f"vortex-rdf-bench/pycottas-endpoint:{PYCOTTAS_ENDPOINT}-{self.image.rsplit(':', 1)[1]}"
 
     @property
     def endpoint(self) -> str:
@@ -98,6 +105,8 @@ class RdflibEndpoint(ServerSystem):
             args.append("--in-memory")
         if not self.pushdown:
             args.append("--no-pushdown")
+        if self.router != "rdflib-endpoint":
+            args += ["--router", self.router]
         return args
 
     def _identity(self) -> dict[str, Any]:
@@ -112,7 +121,14 @@ class RdflibEndpoint(ServerSystem):
         if self.engine == "hdt" and not Path(str(artifact) + ".index.v1-1").is_file():
             raise FileNotFoundError(f"HDT query-ready index is missing: {artifact}.index.v1-1")
         self._last = (source, store)
-        ensure_image(self.image, self.vortex_rdflib_version)
+        if self.router == "pycottas-endpoint":
+            ensure_image(self.base_image, self.vortex_rdflib_version)
+            if docker.image_digest(self.image) is None:
+                subprocess.run(["docker", "build", "-t", self.image, "--build-arg", f"BASE={self.base_image}",
+                                "--build-arg", f"PYCOTTAS_ENDPOINT_VERSION={PYCOTTAS_ENDPOINT}",
+                                "-f", str(DOCKER_CONTEXT / "Dockerfile.pycottas-endpoint"), str(DOCKER_CONTEXT)], check=True)
+        else:
+            ensure_image(self.image, self.vortex_rdflib_version)
         environment = {name: os.environ[name] for name in PASSTHROUGH if name in os.environ}
         if self.query_timeout_s and os.environ.get("VORTEX_RDF_BENCH_SERVER_DEADLINE", "1") != "0":   # cancel server-side shortly after the client has given up
             environment["QUERY_DEADLINE_S"] = f"{self.query_timeout_s + 0.5:g}"

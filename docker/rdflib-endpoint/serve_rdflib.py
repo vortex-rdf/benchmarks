@@ -110,6 +110,8 @@ def main() -> None:
     parser.add_argument("--in-memory", action="store_true")
     parser.add_argument("--no-pushdown", action="store_true")
     parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument("--router", choices=["rdflib-endpoint", "pycottas-endpoint"], default="rdflib-endpoint",
+                        help="pycottas-endpoint: COTTAS's own SPARQL router, unmodified (cottas engine only)")
     args = parser.parse_args()
     if args.engine == "vortex" and args.no_pushdown:
         os.environ["VORTEX_RDF_DISABLE_PUSHDOWN"] = "1"   # read when the store registers its hook
@@ -156,8 +158,17 @@ def main() -> None:
             return prepareQuery(query, initNs=graph_ns)
 
     app = FastAPI(title="vortex-rdf-bench rdflib endpoint")
-    app.include_router(NoParseCacheRouter(graph=graph, path="/sparql", title=f"{args.engine} endpoint",
-                                          enable_update=False))
+    if args.router == "pycottas-endpoint":
+        if args.engine != "cottas":
+            raise SystemExit("--router pycottas-endpoint serves COTTAS files only")
+        import importlib.metadata as md
+        from pycottas_endpoint import SparqlRouter as PycottasRouter
+        app.include_router(PycottasRouter(graph=graph, path="/sparql", enable_update=False))
+        identity["router"] = f"pycottas-endpoint {md.version('pycottas-endpoint')}"
+    else:
+        app.include_router(NoParseCacheRouter(graph=graph, path="/sparql", title=f"{args.engine} endpoint",
+                                              enable_update=False))
+        identity["router"] = "rdflib-endpoint"
 
     deadline_s = float(os.environ.get("QUERY_DEADLINE_S", "0") or 0)
     identity["server_query_deadline_s"] = deadline_s

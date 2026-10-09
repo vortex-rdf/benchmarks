@@ -1,7 +1,8 @@
 """Apache Jena Fuseki (``fuseki-server``), in-memory or TDB2, as in the paper campaigns.
 
-Both datasets are filled by one HTTP upload of the N-Triples file; for TDB2 that upload is the
-build step, after which the server is stopped and the database reused.
+The in-memory dataset is filled by one HTTP upload of the N-Triples file. TDB2 is built as Jena documents it:
+``tdb2.tdbloader`` bulk-loads the database, then ``tdb2.tdbstats`` writes ``Data-0001/stats.opt``, the statistics
+the TDB2 optimizer uses to order BGP joins. Both tools run from the image's ``fuseki-server.jar``.
 """
 from __future__ import annotations
 
@@ -63,22 +64,24 @@ class Fuseki(ServerSystem):
         self.ensure_image()
         if self.mode != "tdb2":
             raise NotImplementedError("the in-memory dataset has no store to build")
-        store = Path(store).resolve()
+        source, store = Path(source).resolve(), Path(store).resolve()
         if store.exists() and any(store.iterdir()):
             raise FileExistsError(f"database directory is not empty: {store} (refusing to overwrite)")
         store.mkdir(parents=True, exist_ok=True)
         store.chmod(0o777)  # the container user is not the host user
-        started = time.perf_counter_ns()
-        self._launch(store)
-        sampler = self.sample_container(self.container)
-        try:
-            docker.wait_until(self.ready, timeout_s=120, alive=lambda: docker.is_running(self.container), what="fuseki")
-            upload_s = self._upload(Path(source))
-        finally:
-            memory = sampler.stop()
-            self.stop()
-            docker.make_user_writable(store, self.image)
-        return {"build": {"elapsed_ns": time.perf_counter_ns() - started, "upload_s": upload_s, "memory": memory}}
+        _, maximum = resources.FUSEKI_HEAPS[self.mode]
+        java = f"java -Xmx{maximum} -cp /fuseki/fuseki-server.jar"
+        script = (f"{java} tdb2.tdbloader --loc {_DATABASE} /source/{source.name}"
+                  f" && {java} tdb2.tdbstats --loc {_DATABASE} > /tmp/stats.opt"
+                  f" && mv /tmp/stats.opt {_DATABASE}/Data-0001/stats.opt")
+        result = self.measured_one_shot(f"{self.container}-load", self.image, ["-c", script],
+                                        volumes=[f"{source.parent}:/source:ro", f"{store}:{_DATABASE}"],
+                                        timeout_s=timeout_s, extra=["--entrypoint", "sh"])
+        docker.make_user_writable(store, self.image)
+        if result.get("exit_code") != 0 or not (store / "Data-0001" / "stats.opt").is_file():
+            raise RuntimeError(f"tdb2.tdbloader/tdbstats failed: {result.get('error') or result.get('logs')}")
+        result["loader"] = "tdb2.tdbloader (default loader) + tdb2.tdbstats"
+        return {"build": result}
 
     def start(self, *, source: Path | None, store: Path | None) -> ServerHandle:
         self.ensure_image()

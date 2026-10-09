@@ -100,7 +100,8 @@ class ServerSystem(abc.ABC):
 
     def measured_one_shot(self, name: str, image: str, command: list[str], *, volumes: list[str],
                           timeout_s: float, environment: dict[str, str] | None = None,
-                          user: str | None = None, workdir: str | None = None) -> dict[str, Any]:
+                          user: str | None = None, workdir: str | None = None,
+                          extra: list[str] | None = None) -> dict[str, Any]:
         """Run a loader/indexer container to completion, sampling its cgroup v2 memory.
 
         Returns elapsed time, exit code, logs and the anon/file/total memory peaks.
@@ -113,7 +114,7 @@ class ServerSystem(abc.ABC):
             started = time.perf_counter_ns()
             try:
                 code, logs = docker.run_to_exit(name, image, command, environment=environment, volumes=volumes,
-                                                user=user, workdir=workdir, timeout=timeout_s)
+                                                user=user, workdir=workdir, timeout=timeout_s, extra=extra or ())
                 result.update(exit_code=code, logs=logs[-4000:])
             except Exception as error:  # noqa: BLE001
                 result.update(exit_code=None, logs="", error=f"{type(error).__name__}: {error}")

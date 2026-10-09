@@ -38,6 +38,10 @@
       "system": "pycottas/default"
     },
     {
+      "representation": "cottas/default",
+      "system": "pycottas/endpoint"
+    },
+    {
       "representation": "rdf/source",
       "system": "rdflib/default"
     },

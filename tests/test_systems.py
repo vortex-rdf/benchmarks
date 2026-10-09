@@ -1,3 +1,4 @@
+from pathlib import Path
 import unittest
 
 from benchmark_core.systems import resources
@@ -25,6 +26,11 @@ class SystemTests(unittest.TestCase):
         plain = get_system("vortex-rdf/dictionary-secondary-by-copy")
         self.assertEqual((plain.engine, plain.in_memory, plain.pushdown), ("vortex", False, True))
         self.assertEqual(get_system("pycottas/default").engine, "cottas")
+        official = get_system("pycottas/endpoint")
+        self.assertEqual((official.engine, official.router), ("cottas", "pycottas-endpoint"))
+        self.assertTrue(official.image.startswith("vortex-rdf-bench/pycottas-endpoint:0.5.3-vrl-"))
+        self.assertEqual(official._arguments(Path("/x/dataset.cottas"))[-2:], ["--router", "pycottas-endpoint"])
+        self.assertNotIn("--router", get_system("pycottas/default")._arguments(Path("/x/dataset.cottas")))
         self.assertEqual(get_system("hdt-rdflib/optimized-in-memory").engine, "hdt")
         self.assertEqual(get_system("rdflib/default").endpoint, "http://localhost:7880/sparql")
 
