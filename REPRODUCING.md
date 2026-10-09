@@ -174,7 +174,12 @@ not yet been run end to end by a clean checkout.
    `DBBench/data/dbpedia-3.5.1/dbpedia_en_all.nt` and check it with
    `python DBBench/utils/verify_dbpedia_checksum.py <file>`.
 2. *Queries.* `mkdir -p DBBench/data && curl -L https://dataweb.infor.uva.es/queries-k2triples.tgz | tar xz -C DBBench/data`
-   (creates `DBBench/data/queries`). Then
+   (creates `DBBench/data/queries`). One query in that archive has a literal without its closing quote; the
+   paper used it repaired (the query-tree sha256 in `DBBench/checksums.json` is of the repaired tree):
+   ```bash
+   sed -i 's/American R\&amp \.}/American R\&amp" .}/' DBBench/data/queries/TP/dbpedia/VVoSPARQL.txt
+   ```
+   Then
    ```bash
    vortex-rdf-bench dbbench prepare --query-root DBBench/data/queries --dataset dbpedia \
        --workload dbbench-dbpedia-full --output DBBench/data/dbpedia-base.json
