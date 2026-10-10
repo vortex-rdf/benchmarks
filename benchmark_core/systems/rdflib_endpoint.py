@@ -148,8 +148,11 @@ class RdflibEndpoint(ServerSystem):
         if self.query_timeout_s and os.environ.get("VORTEX_RDF_BENCH_SERVER_DEADLINE", "1") != "0":   # cancel server-side shortly after the client has given up
             environment["QUERY_DEADLINE_S"] = f"{self.query_timeout_s + 0.5:g}"
         started = time.monotonic()
+        # The repository's serve_rdflib.py, not the image's copy (it fixes rdflib-endpoint's double decoding).
         docker.run_detached(self.container, self.image, self._arguments(artifact), ports={self.port: 8000},
-                            volumes=[f"{artifact.parent}:/data:ro"], environment=environment)
+                            volumes=[f"{artifact.parent}:/data:ro",
+                                     f"{DOCKER_CONTEXT / 'serve_rdflib.py'}:/app/serve_rdflib.py:ro"],
+                            environment=environment)
         alive = lambda: docker.is_running(self.container)  # noqa: E731
         docker.wait_until(lambda: bool(self._identity()), timeout_s=self.ready_timeout_s, alive=alive,
                           what=self.system_id)

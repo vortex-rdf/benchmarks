@@ -85,7 +85,8 @@ def main() -> None:
         normalized["result_count"] = count(result, rows)
         return {"normalized": normalized, "metadata": {}}
 
-    serve(ready, execute, finish)
+    # rdflib-hdt prints one line per triple pattern and join; the HTTP endpoint sends that to /dev/null too.
+    serve(ready, execute, finish, discard_stdout=config["engine"] == "hdt")
 
 
 if __name__ == "__main__":

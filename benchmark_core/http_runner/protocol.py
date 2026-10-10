@@ -23,7 +23,7 @@ class _Protocol:
         self._stream.flush()
 
 
-def serve(ready: dict, execute, finish) -> None:
+def serve(ready: dict, execute, finish, *, discard_stdout: bool = False) -> None:
     """Serve requests until shutdown.
 
     ``execute(request)`` runs the query, consumes the complete result, and
@@ -31,6 +31,8 @@ def serve(ready: dict, execute, finish) -> None:
     the ``result`` payload fields. Only ``execute`` is inside the timer.
     """
     protocol = _Protocol()
+    if discard_stdout:      # engines that print per pattern (rdflib-hdt): keep that out of the measured work
+        os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
     protocol.emit({"kind": "ready", "protocol": PROTOCOL, **ready})
     for line in sys.stdin:
         request = json.loads(line)

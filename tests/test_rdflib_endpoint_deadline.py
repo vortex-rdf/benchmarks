@@ -54,3 +54,14 @@ class DeadlineTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SingleDecodeTests(unittest.TestCase):
+    def test_form_post_is_decoded_once(self):
+        import types
+        from urllib.parse import urlencode
+        module = types.SimpleNamespace()
+        serve.single_decode(module)
+        query = "SELECT * WHERE { <http://dbpedia.org/resource/Max_%28Album%29> ?p ?o }"
+        (value,) = [v for k, v in module.parse.parse_qsl(urlencode({"query": query})) if k == "query"]
+        self.assertEqual(module.parse.unquote(value), query)

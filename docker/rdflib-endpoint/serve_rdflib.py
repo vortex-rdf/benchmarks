@@ -114,6 +114,15 @@ def build_graph(engine: str, store: str, layout: str, in_memory: bool):
     raise SystemExit(f"unsupported engine: {engine}")
 
 
+def single_decode(sparql_router) -> None:
+    """rdflib-endpoint 0.6.3 decodes a form-encoded POST twice (``parse_qsl``, then ``unquote``), which turns
+    ``%28`` into ``(`` inside IRIs (2,323 DBpedia queries), so such patterns match nothing. ``parse_qsl`` has already
+    decoded the value (and Starlette the query string): make the module's second decoding a no-op."""
+    import types
+    import urllib.parse
+    sparql_router.parse = types.SimpleNamespace(parse_qsl=urllib.parse.parse_qsl, unquote=lambda value: value)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--engine", required=True, choices=["vortex", "rdflib", "cottas", "hdt"])
@@ -159,6 +168,7 @@ def main() -> None:
     from fastapi import FastAPI
     import rdflib_endpoint.sparql_router as sparql_router
     from rdflib_endpoint import SparqlRouter
+    single_decode(sparql_router)
 
     # rdflib-endpoint answers DESCRIBE with a SPARQL-results content type; a DESCRIBE result is a
     # graph, so serialize it as N-Triples, which is what the benchmark client requests.
