@@ -20,6 +20,7 @@ import dataclasses
 import hashlib
 import json
 import os
+import statistics
 import time
 from collections.abc import Callable, Mapping
 from pathlib import Path
@@ -48,6 +49,7 @@ class RunProfile:
     startup_timeout_s: float = 120.0
     skip_after_warmup_failure: bool = True       # skip a query's measured runs after a failed warm-up
     force_include: bool = False                  # ignore quarantine and warm-up skips
+    floor_probes: int = 0                        # ASK {} requests before the measured phase and after the last query
 
     def to_json(self) -> dict[str, Any]:
         return dataclasses.asdict(self)
@@ -64,6 +66,35 @@ class _MemoryProbe:
 
     def lifetime_peak_bytes(self):
         return self._worker.lifetime_peak_bytes()
+
+
+FLOOR_QUERY = "ASK {}"
+
+
+def _floor_probe(worker: HttpQueryWorker, probes: int) -> dict[str, Any]:
+    """Latency of a trivial query: transport, request parsing and result serialization without evaluation.
+
+    Same worker, timer and result path as every other attempt. Gives up after three failed requests.
+    """
+    elapsed_ns: list[int] = []
+    errors = 0
+    for _ in range(probes):
+        worker.prepare_for_attempt()
+        try:
+            elapsed_ns.append(worker.execute(FLOOR_QUERY).elapsed_ns)
+        except BaseException as error:  # noqa: BLE001
+            if isinstance(error, KeyboardInterrupt):
+                raise
+            errors += 1
+            if errors >= 3:
+                break
+    result: dict[str, Any] = {"query": FLOOR_QUERY, "requested": probes, "ok": len(elapsed_ns), "errors": errors}
+    if elapsed_ns:
+        ordered = sorted(elapsed_ns)
+        result.update({"min_ns": ordered[0], "median_ns": int(statistics.median(ordered)),
+                       "mean_ns": int(statistics.mean(ordered)),
+                       "p95_ns": ordered[min(len(ordered) - 1, int(0.95 * len(ordered)))], "max_ns": ordered[-1]})
+    return result
 
 
 def _status_for_exception(error: BaseException) -> str:
@@ -157,6 +188,7 @@ def run_system(*, manifest: Mapping[str, Any], system: str, experiment_id: str, 
     quarantined: dict[tuple[str, str], dict[str, Any]] = {}
     skip_after_warmup: dict[str, tuple[str, str]] = {}
     budget: dict[str, Any] | None = None
+    floor: dict[str, Any] = {}
     stage_ns = {"open": 0, "warmup": 0, "measured": 0, "close": 0}
     memory_metrics = None
     started_ns = time.perf_counter_ns()
@@ -171,6 +203,10 @@ def run_system(*, manifest: Mapping[str, Any], system: str, experiment_id: str, 
             worker.open()
             stage_ns["open"] = time.perf_counter_ns() - opened
             for ordinal, (phase, run, order, query) in enumerate(attempts, 1):
+                if phase == "measured" and profile.floor_probes and "before" not in floor:
+                    if sampler is not None:
+                        sampler.set_phase("floor")
+                    floor["before"] = _floor_probe(worker, profile.floor_probes)
                 if max_wall_ns and time.perf_counter_ns() - started_ns >= max_wall_ns:
                     budget = {"schema": "rdf-query-budget-exhaustion-v1", "status": "budget_exhausted",
                               "budget_kind": "actual-wall-time", "completed_attempt_count": ordinal - 1,
@@ -247,6 +283,10 @@ def run_system(*, manifest: Mapping[str, Any], system: str, experiment_id: str, 
                 progress(_line("done", ordinal, total, system, record, worker, counts))
                 stream.write(json.dumps(validate_result(record), ensure_ascii=False, sort_keys=True) + "\n")
                 stream.flush()
+            if profile.floor_probes and budget is None and "before" in floor:
+                if sampler is not None:
+                    sampler.set_phase("floor")
+                floor["after"] = _floor_probe(worker, profile.floor_probes)
         finally:
             closing = time.perf_counter_ns()
             if sampler is not None:
@@ -261,6 +301,7 @@ def run_system(*, manifest: Mapping[str, Any], system: str, experiment_id: str, 
         "container": container, "profile": profile.to_json(), "attempts_expected": total,
         "status_counts": counts, "total_wall_ns": time.perf_counter_ns() - started_ns,
         "stages_ns": stage_ns, "budget": budget, "phase_memory_metrics": memory_metrics,
+        "transport_floor": floor or None,
         "worker_restarts": worker.recovery_restarts,
         "worker_starts": worker.ready_messages,
         "manifest_sha256": manifest.get("_sha256"), "records_sha256": sha256_file(output),

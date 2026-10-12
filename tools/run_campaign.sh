@@ -6,7 +6,7 @@
 # Without systems, every system bound in the declaration runs, in the order below (fast servers first).
 # Resumable: a system whose results.summary.json exists is skipped. Environment:
 #   MAX_WALL_S (per-system cap, default 14400)   QUARANTINE (default 3)   NO_DROP_CACHES=1 (no sudo)
-#   IN_PROCESS=1 (library mode, no HTTP)   OUTPUT_ROOT (default <benchmark-root>/data/runs)   STORE_ROOT (default <benchmark-root>/data/http-stores)
+#   FLOOR_PROBES=N (ASK {} floor probes before the measured phase and after it)   IN_PROCESS=1 (library mode, no HTTP)   OUTPUT_ROOT (default <benchmark-root>/data/runs)   STORE_ROOT (default <benchmark-root>/data/http-stores)
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
@@ -28,6 +28,7 @@ if [ "$#" -eq 0 ]; then
 fi
 FLAGS=(--quarantine-threshold "${QUARANTINE:-3}" --max-wall-s "${MAX_WALL_S:-14400}")
 [ -n "${NO_DROP_CACHES:-}" ] && FLAGS+=(--no-drop-caches)
+[ -n "${FLOOR_PROBES:-}" ] && FLAGS+=(--floor-probes "$FLOOR_PROBES")   # ASK {} transport-floor probes (e.g. 200)
 [ -n "${IN_PROCESS:-}" ] && FLAGS+=(--in-process)    # library mode (rdflib-endpoint systems only)
 
 for system in "$@"; do

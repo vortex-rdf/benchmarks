@@ -56,7 +56,7 @@ def run_declaration(*, declaration: Path, benchmark_root: Path, manifest_path: P
                     output_root: Path, store_root: Path, timeout_s: float | None = None,
                     correctness: str = "auto", quarantine_threshold: int = 3, max_wall_s: float = 0.0,
                     drop_caches: bool = True, experiment_id: str | None = None,
-                    repository: Path | None = None, in_process: bool = False) -> dict[str, Any]:
+                    repository: Path | None = None, in_process: bool = False, floor_probes: int = 0) -> dict[str, Any]:
     benchmark_root = Path(benchmark_root).resolve()
     declared = load_experiment_declaration(declaration)
     bindings = {item["system"]: item["representation"] for item in declared["bindings"]}
@@ -68,7 +68,8 @@ def run_declaration(*, declaration: Path, benchmark_root: Path, manifest_path: P
     manifest["_sha256"] = sha256_file(Path(manifest_path))
     mode = _uniform_correctness(manifest) if correctness == "auto" else correctness
     profile = RunProfile(timeout_s=timeout_s or float(declared["execution_policy"]["timeout_s"]),
-                         correctness_mode=mode, quarantine_threshold=quarantine_threshold, max_wall_s=max_wall_s)
+                         correctness_mode=mode, quarantine_threshold=quarantine_threshold, max_wall_s=max_wall_s,
+                         floor_probes=floor_probes)
     experiment = experiment_id or declared["experiment"].replace("/", "-")
     run_dir = Path(output_root) / experiment
     run_dir.mkdir(parents=True, exist_ok=True)

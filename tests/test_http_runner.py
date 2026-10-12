@@ -22,7 +22,9 @@ class _Handler(BaseHTTPRequestHandler):
         type(self).calls.append(query)
         if "SLOW" in query:
             time.sleep(2.0)
-        if "BAD" in query:
+        if query.strip().startswith("ASK"):
+            payload, status = json.dumps({"head": {}, "boolean": True}).encode(), 200
+        elif "BAD" in query:
             payload, status = b"parse error", 400
         else:
             rows = int(query.rsplit("LIMIT", 1)[1]) if "LIMIT" in query else 1
@@ -89,6 +91,19 @@ class HttpRunnerTests(unittest.TestCase):
         self.assertEqual(records[1]["result_fingerprint"], expected["result_fingerprint"])
         self.assertEqual(summary["status_counts"], {"ok": 2})
         self.assertTrue(out.with_name("run.summary.json").exists())
+
+    def test_floor_probes_before_and_after_are_summarized_not_recorded(self):
+        _Handler.calls.clear()
+        records, summary, _, _ = self.run_toy([("1", "LIMIT 2", "warmup"), ("1", "LIMIT 2", "measured")], floor_probes=5)
+        self.assertEqual(len(records), 2)                                   # probes are not result records
+        self.assertEqual(sum(q.strip().startswith("ASK") for q in _Handler.calls), 10)
+        floor = summary["transport_floor"]
+        for part in ("before", "after"):
+            self.assertEqual((floor[part]["ok"], floor[part]["errors"]), (5, 0))
+            self.assertGreater(floor[part]["median_ns"], 0)
+            self.assertLessEqual(floor[part]["min_ns"], floor[part]["median_ns"])
+        records, summary, *_ = self.run_toy([("1", "LIMIT 2", "measured")])
+        self.assertIsNone(summary["transport_floor"])                       # off by default
 
     def test_count_only_mode_has_no_fingerprint(self):
         records, *_ = self.run_toy([("1", "LIMIT 4", "measured")], correctness_mode="count-only")
