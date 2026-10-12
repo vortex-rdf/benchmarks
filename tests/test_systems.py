@@ -41,7 +41,7 @@ class SystemTests(unittest.TestCase):
     def test_new_systems_commands_and_flags(self):
         from benchmark_core.http_runner.protocol import RAW_QUERY_SYSTEMS
         fluree, mdb, qep = get_system("fluree/default"), get_system("millenniumdb/default"), get_system("qendpoint/hdt")
-        self.assertEqual((fluree.persistent, mdb.persistent, qep.persistent), (True, True, False))
+        self.assertEqual((fluree.persistent, mdb.persistent, qep.persistent), (True, True, True))
         self.assertIn("millenniumdb/default", RAW_QUERY_SYSTEMS)
         self.assertNotIn("fluree/default", RAW_QUERY_SYSTEMS)
         mdb.query_timeout_s = 10.0
@@ -53,22 +53,10 @@ class SystemTests(unittest.TestCase):
             self.assertTrue(system.image.startswith("vortex-rdf-bench/"))
             self.assertTrue(system.docker_context.joinpath("Dockerfile").is_file())
 
-    def test_qendpoint_work_dir_copies_hdt_and_index(self):
-        import tempfile
-        from benchmark_core.systems.qendpoint import QEndpoint
-        with tempfile.TemporaryDirectory() as tmp:
-            hdt = Path(tmp) / "dataset.hdt"
-            hdt.write_bytes(b"hdt")
-            (Path(tmp) / "dataset.hdt.index.v1-1").write_bytes(b"index")
-            work = QEndpoint.prepare_work_dir(hdt)
-            self.assertEqual((work / "hdt-store" / "index_dev.hdt").read_bytes(), b"hdt")
-            self.assertEqual((work / "hdt-store" / "index_dev.hdt.index.v1-1").read_bytes(), b"index")
-            self.assertEqual(hdt.read_bytes(), b"hdt")        # the shared file is only read
-
     def test_persistence_flags(self):
         persistent = {s for s in system_ids() if get_system(s).persistent}
         self.assertEqual(persistent, {"fluree/default", "fuseki/tdb2", "millenniumdb/default", "oxigraph/rocksdb",
-                                      "qlever/default", "virtuoso/default"})
+                                      "qendpoint/hdt", "qlever/default", "virtuoso/default"})
 
     def test_pinned_images(self):
         self.assertEqual(OXIGRAPH_IMAGE, "vortex-rdf-bench/oxigraph:0.5.9")

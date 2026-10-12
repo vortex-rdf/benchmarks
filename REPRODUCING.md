@@ -328,7 +328,7 @@ system passes the BSBM checks (see the experiment notes).
 |---|---|---|---|
 | `fluree/default` | `fluree/server:4.2.3` (BUSL-1.1) | `fluree create bench --from <nt>` bulk import (memory budget and threads from `resources.py`) | `POST /v1/fluree/query/bench`, form-encoded |
 | `millenniumdb/default` | `imfd/millenniumdb:1.0.0` (GPL-2.0) | `mdb import` (N-Triples as Turtle) into a database directory | `POST :1234/sparql`, raw `application/sparql-query` body (`RAW_QUERY_SYSTEMS` in `http_runner/protocol.py`) |
-| `qendpoint/hdt` | `qacompany/qendpoint:2.5.4` | none: serves a copy of the benchmark's own `dataset.hdt` and index from `qendpoint-work/hdt-store/` | `POST :1234/api/endpoint/sparql`, form-encoded |
+| `qendpoint/hdt` | `qacompany/qendpoint:2.5.4` | the endpoint loads the N-Triples file through `/api/endpoint/load` (the benchmark's HDT files are rejected: empty base URI in the header) | `POST :1234/api/endpoint/sparql`, form-encoded |
 
 Fluree's license (BUSL-1.1) should be checked before publishing its numbers. Run `tools/run_campaign.sh` with the id,
 for example `tools/run_campaign.sh BSBM BSBM/experiments/explore-1k-full.json BSBM/data/explore-1k/standalone-smoke-manifest.json bsbm-1k-new fluree/default`.

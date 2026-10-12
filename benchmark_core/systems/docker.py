@@ -35,6 +35,11 @@ def remove(name: str) -> None:
     _run(["rm", "-f", name], check=False)
 
 
+def stop(name: str, timeout_s: int = 60) -> None:
+    """Graceful stop (SIGTERM, then SIGKILL after ``timeout_s``), so that a server can flush its store."""
+    _run(["stop", "-t", str(timeout_s), name], check=False)
+
+
 def run_detached(name: str, image: str, command: Sequence[str] = (), *, environment: Mapping[str, str] | None = None,
                  ports: Mapping[int, int] | None = None, volumes: Sequence[str] = (), memory: str = DOCKER_MEMORY,
                  user: str | None = None, workdir: str | None = None,

@@ -384,6 +384,7 @@ _GRAPH_MEDIA_TYPES = {
     'application/n-triples': 'nt',
     'text/plain': 'nt',
     'text/turtle': 'turtle',
+    'application/turtle': 'turtle',
     'application/rdf+xml': 'xml',
     'application/ld+json': 'json-ld',
 }

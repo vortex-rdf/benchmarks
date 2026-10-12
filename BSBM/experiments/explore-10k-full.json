@@ -102,7 +102,7 @@
       "system": "millenniumdb/default"
     },
     {
-      "representation": "hdt/default",
+      "representation": "rdf/source",
       "system": "qendpoint/hdt"
     }
   ],

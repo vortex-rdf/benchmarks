@@ -164,7 +164,7 @@ def make_handlers(config: dict, session):
     def finish(request, state):
         response, body, result_type = state
         content_type = response.headers.get("Content-Type", "")
-        media_type = content_type.split(";", 1)[0].strip().lower()
+        media_type = content_type.split(";", 1)[0].strip().lower().removeprefix("content-type:").strip()   # MillenniumDB repeats the header name in the value
         metadata = {
             "http_status": response.status_code,
             "response_bytes": len(body),

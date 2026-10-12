@@ -59,7 +59,7 @@ class MillenniumDB(ServerSystem):
         timeout = math.ceil(self.query_timeout_s) + 1 if self.query_timeout_s else 60
         return ["mdb", "server", "--timeout", str(timeout), "--threads", str(resources.MDB_THREADS),
                 "--versioned-buffer", resources.MDB_VERSIONED_BUFFER,
-                "--unversioned-buffer", resources.MDB_UNVERSIONED_BUFFER,
+                "--private-buffer", resources.MDB_PRIVATE_BUFFER,
                 "--strings-static", resources.MDB_STRING_BUFFERS, "--strings-dynamic", resources.MDB_STRING_BUFFERS, "."]
 
     def start(self, *, source: Path | None, store: Path | None) -> ServerHandle:
