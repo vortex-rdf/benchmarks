@@ -26,7 +26,7 @@ from benchmark_core.http_runner.normalize import (
     _correct_qlever_integer_datatypes, _normalize_graph_response, normalize_sparql_json_result,
 )
 
-from benchmark_core.http_runner.protocol import PROTOCOL, serve, stage_clock  # noqa: E402,F401
+from benchmark_core.http_runner.protocol import PROTOCOL, RAW_QUERY_SYSTEMS, serve, stage_clock  # noqa: E402,F401
 
 
 _QLEVER_SYSTEM = "qlever/default"
@@ -142,10 +142,13 @@ def make_handlers(config: dict, session):
             data["maxrows"] = str(request_max_rows)
         if system == _VIRTUOSO_SYSTEM:
             data["default-graph-uri"] = _VIRTUOSO_DEFAULT_GRAPH
+        headers = {"Accept": accept}
+        if system in RAW_QUERY_SYSTEMS:     # the query is the whole POST body (SPARQL protocol, direct POST)
+            headers["Content-Type"] = "application/sparql-query"
+            data = request["query"].encode("utf-8")
         started = stage_clock()
-        response = session.post(endpoint, data=data, headers={"Accept": accept},
-                                stream=True)
-        headers = stage_clock()
+        response = session.post(endpoint, data=data, headers=headers, stream=True)
+        headers_at = stage_clock()
         body = response.content
         consumed = stage_clock()
         if response.status_code >= 400:
@@ -154,8 +157,8 @@ def make_handlers(config: dict, session):
                 + body[:300].decode("utf-8", errors="replace")
             )
         return (response, body, result_type), {
-            "request_until_response_headers": headers - started,
-            "response_body": consumed - headers,
+            "request_until_response_headers": headers_at - started,
+            "response_body": consumed - headers_at,
         }
 
     def finish(request, state):

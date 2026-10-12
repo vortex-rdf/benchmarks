@@ -11,8 +11,12 @@ from benchmark_core.systems.virtuoso import Virtuoso
 
 class SystemTests(unittest.TestCase):
     def test_registry_ids_and_endpoints(self):
-        self.assertEqual(system_ids(), ["comunica/hdt", "fuseki/memory", "fuseki/tdb2", "oxigraph/memory",
-                                        "oxigraph/rocksdb", "qlever/default", "virtuoso/default"])
+        self.assertEqual(system_ids(), ["comunica/hdt", "fluree/default", "fuseki/memory", "fuseki/tdb2",
+                                        "millenniumdb/default", "oxigraph/memory", "oxigraph/rocksdb",
+                                        "qendpoint/hdt", "qlever/default", "virtuoso/default"])
+        self.assertEqual(get_system("fluree/default").endpoint, "http://localhost:8090/v1/fluree/query/bench")
+        self.assertEqual(get_system("millenniumdb/default").endpoint, "http://localhost:1234/sparql")
+        self.assertEqual(get_system("qendpoint/hdt").endpoint, "http://localhost:1234/api/endpoint/sparql")
         self.assertEqual(get_system("fuseki/memory").endpoint, "http://localhost:3030/ds/sparql")
         self.assertEqual(get_system("oxigraph/rocksdb").endpoint, "http://localhost:7878/query")
         self.assertEqual(get_system("qlever/default").endpoint, "http://localhost:7001")
@@ -34,9 +38,37 @@ class SystemTests(unittest.TestCase):
         self.assertEqual(get_system("hdt-rdflib/optimized-in-memory").engine, "hdt")
         self.assertEqual(get_system("rdflib/default").endpoint, "http://localhost:7880/sparql")
 
+    def test_new_systems_commands_and_flags(self):
+        from benchmark_core.http_runner.protocol import RAW_QUERY_SYSTEMS
+        fluree, mdb, qep = get_system("fluree/default"), get_system("millenniumdb/default"), get_system("qendpoint/hdt")
+        self.assertEqual((fluree.persistent, mdb.persistent, qep.persistent), (True, True, False))
+        self.assertIn("millenniumdb/default", RAW_QUERY_SYSTEMS)
+        self.assertNotIn("fluree/default", RAW_QUERY_SYSTEMS)
+        mdb.query_timeout_s = 10.0
+        command = mdb._server_command()
+        self.assertEqual(command[:2], ["mdb", "server"])
+        self.assertEqual(command[command.index("--timeout") + 1], "11")      # client timeout + 1 s
+        self.assertEqual(command[-1], ".")
+        for system in (fluree, mdb, qep):
+            self.assertTrue(system.image.startswith("vortex-rdf-bench/"))
+            self.assertTrue(system.docker_context.joinpath("Dockerfile").is_file())
+
+    def test_qendpoint_work_dir_copies_hdt_and_index(self):
+        import tempfile
+        from benchmark_core.systems.qendpoint import QEndpoint
+        with tempfile.TemporaryDirectory() as tmp:
+            hdt = Path(tmp) / "dataset.hdt"
+            hdt.write_bytes(b"hdt")
+            (Path(tmp) / "dataset.hdt.index.v1-1").write_bytes(b"index")
+            work = QEndpoint.prepare_work_dir(hdt)
+            self.assertEqual((work / "hdt-store" / "index_dev.hdt").read_bytes(), b"hdt")
+            self.assertEqual((work / "hdt-store" / "index_dev.hdt.index.v1-1").read_bytes(), b"index")
+            self.assertEqual(hdt.read_bytes(), b"hdt")        # the shared file is only read
+
     def test_persistence_flags(self):
         persistent = {s for s in system_ids() if get_system(s).persistent}
-        self.assertEqual(persistent, {"fuseki/tdb2", "oxigraph/rocksdb", "qlever/default", "virtuoso/default"})
+        self.assertEqual(persistent, {"fluree/default", "fuseki/tdb2", "millenniumdb/default", "oxigraph/rocksdb",
+                                      "qlever/default", "virtuoso/default"})
 
     def test_pinned_images(self):
         self.assertEqual(OXIGRAPH_IMAGE, "vortex-rdf-bench/oxigraph:0.5.9")

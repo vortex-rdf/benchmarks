@@ -18,7 +18,7 @@ class ExperimentDeclarationTests(unittest.TestCase):
         smoke = load_experiment_declaration(self.smoke_path)
         full = load_experiment_declaration(self.full_path)
 
-        self.assertEqual(len(smoke["bindings"]), 22)        # 10 comparison systems + 12 Vortex configurations
+        self.assertEqual(len(smoke["bindings"]), 25)        # 13 comparison systems + 12 Vortex configurations
         self.assertEqual(len(smoke["representations"]), 9)  # source, HDT, COTTAS, 6 Vortex layout/index variants
         self.assertEqual(full["bindings"], smoke["bindings"])
         self.assertEqual(full["representations"], smoke["representations"])
@@ -74,7 +74,7 @@ class ExperimentDeclarationTests(unittest.TestCase):
             self.assertEqual(value["workload"], workload)
             self.assertEqual(value["experiment"], experiment)
             self.assertEqual(set(value["representations"]), expected_representations)
-            self.assertEqual(len(value["bindings"]), 14)
+            self.assertEqual(len(value["bindings"]), 14 if "100m" in name else 17)   # 100m: new systems added after its run
             self.assertEqual(value["execution_policy"], {
                 "warmup_runs": 0,
                 "measured_runs": 1,

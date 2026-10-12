@@ -45,3 +45,14 @@ def provenance() -> dict:
         "qlever": {"memory_max_size": QLEVER_QUERY_MEMORY, "cache_max_size": QLEVER_CACHE_MEMORY,
                    "num_simultaneous_queries": QLEVER_SIMULTANEOUS_QUERIES, "threads": QLEVER_THREADS},
     }
+
+# Fluree bulk import (`fluree create --from`): memory budget and parse threads (its default is 80% of the host RAM).
+FLUREE_IMPORT_MEMORY_MB = int(SYSTEM_MEMORY_GIB * 1024 * 0.7)
+FLUREE_IMPORT_THREADS = 6
+# MillenniumDB server buffers (the Sparqloscope setup guidance for 32/64 GiB hosts: about 70% for the versioned buffer).
+MDB_VERSIONED_BUFFER = f"{max(1, round(38 * _SCALE))}GB"
+MDB_UNVERSIONED_BUFFER = "2GB"
+MDB_STRING_BUFFERS = f"{max(1, round(5 * _SCALE))}GB"
+MDB_THREADS = 6
+# qEndpoint JVM heap (MEM_SIZE of its image).
+QENDPOINT_HEAP = f"{max(4, round(40 * _SCALE))}G"

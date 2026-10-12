@@ -14,6 +14,7 @@ BENCH="$1"; DECL="$2"; MANIFEST="$3"; EXPERIMENT="$4"; shift 4
 OUT="${OUTPUT_ROOT:-$BENCH/data/runs}"
 STORES="${STORE_ROOT:-$BENCH/data/http-stores}"
 ORDER="oxigraph/memory oxigraph/rocksdb qlever/default virtuoso/default fuseki/memory fuseki/tdb2 comunica/hdt
+ fluree/default millenniumdb/default qendpoint/hdt
  vortex-rdf/dictionary-secondary-by-reference vortex-rdf/dictionary-secondary-by-reference-memory
  vortex-rdf/dictionary-secondary-by-copy vortex-rdf/dictionary-secondary-by-copy-memory
  vortex-rdf/dictionary-no-index vortex-rdf/dictionary-no-index-memory

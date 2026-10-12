@@ -56,6 +56,18 @@
     {
       "representation": "vortex-rdf/dictionary-secondary-by-copy",
       "system": "vortex-rdf/dictionary-secondary-by-copy-memory"
+    },
+    {
+      "representation": "rdf/source",
+      "system": "fluree/default"
+    },
+    {
+      "representation": "rdf/source",
+      "system": "millenniumdb/default"
+    },
+    {
+      "representation": "hdt/default",
+      "system": "qendpoint/hdt"
     }
   ],
   "dataset": "watdiv-10m",

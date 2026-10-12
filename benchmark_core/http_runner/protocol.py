@@ -9,6 +9,9 @@ import traceback
 
 PROTOCOL = "jsonl-v2"
 
+# Systems whose SPARQL endpoint takes the query as the raw POST body (Content-Type: application/sparql-query).
+RAW_QUERY_SYSTEMS = frozenset({"millenniumdb/default"})
+
 
 class _Protocol:
     """Own the original stdout; route everything else printed to stderr."""
