@@ -80,6 +80,18 @@
     {
       "representation": "vortex-rdf/default-secondary-by-copy",
       "system": "vortex-rdf/default-secondary-by-copy-memory"
+    },
+    {
+      "representation": "rdf/source",
+      "system": "millenniumdb/default"
+    },
+    {
+      "representation": "rdf/source",
+      "system": "qendpoint/hdt"
+    },
+    {
+      "representation": "rdf/source",
+      "system": "fluree/default"
     }
   ],
   "dataset": "dbpedia-en-all",
