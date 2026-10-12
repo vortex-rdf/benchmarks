@@ -49,6 +49,10 @@ class SystemTests(unittest.TestCase):
         self.assertEqual(command[:2], ["mdb", "server"])
         self.assertEqual(command[command.index("--timeout") + 1], "11")      # client timeout + 1 s
         self.assertEqual(command[-1], ".")
+        fluree.query_timeout_s = qep.query_timeout_s = 10.0
+        self.assertEqual(fluree.server_environment()["FLUREE_QUERY_TIMEOUT_MS"], "11000")
+        self.assertEqual(int(fluree.server_environment()["FLUREE_CACHE_MAX_MB"]), int(resources.SYSTEM_MEMORY_GIB * 1024 * 0.35))
+        self.assertEqual(qep.server_timeout_s(), 11)
         for system in (fluree, mdb, qep):
             self.assertTrue(system.image.startswith("vortex-rdf-bench/"))
             self.assertTrue(system.docker_context.joinpath("Dockerfile").is_file())

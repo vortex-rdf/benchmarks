@@ -1,6 +1,7 @@
 """Fluree DB 4 (``fluree create --from`` bulk import, ``fluree server run`` to serve), upstream image."""
 from __future__ import annotations
 
+import math
 import time
 from pathlib import Path
 from typing import Any
@@ -22,6 +23,15 @@ class Fluree(ServerSystem):
     persistent = True
     port = 8090
     query_path = f"/v1/fluree/query/{LEDGER}"
+
+    def __init__(self):
+        self.query_timeout_s: float | None = None     # set by the campaign
+
+    def server_environment(self) -> dict[str, str]:
+        """Fluree's own query timeout one second past the client's (its default is 15 minutes, and abandoned
+        queries piling up got it OOM-killed on WatDiv 10M), and its cache budget made explicit."""
+        timeout_ms = (math.ceil(self.query_timeout_s) + 1) * 1000 if self.query_timeout_s else 60_000
+        return {"FLUREE_QUERY_TIMEOUT_MS": str(timeout_ms), "FLUREE_CACHE_MAX_MB": str(resources.FLUREE_CACHE_MB)}
 
     def build(self, *, source: Path, store: Path, timeout_s: float = 10800.0) -> dict[str, Any]:
         self.ensure_image()
@@ -49,8 +59,10 @@ class Fluree(ServerSystem):
         if store is None:
             raise ValueError("fluree/default needs the directory its import created")
         started = time.monotonic()
+        environment = self.server_environment()
         docker.run_detached(self.container, self.image, [], ports={self.port: self.port},
-                            volumes=[f"{Path(store).resolve()}:{STATE_DIR}"])
+                            volumes=[f"{Path(store).resolve()}:{STATE_DIR}"], environment=environment)
         docker.wait_until(self.ready, timeout_s=self.ready_timeout_s,
                           alive=lambda: docker.is_running(self.container), what="fluree")
-        return ServerHandle(self.system_id, self.container, self.endpoint, time.monotonic() - started)
+        return ServerHandle(self.system_id, self.container, self.endpoint, time.monotonic() - started,
+                            extra={"server_environment": environment})

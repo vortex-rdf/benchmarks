@@ -7,6 +7,7 @@ That upload is the build step, measured in the container's cgroup like every oth
 """
 from __future__ import annotations
 
+import math
 import subprocess
 import time
 from pathlib import Path
@@ -29,8 +30,16 @@ class QEndpoint(ServerSystem):
     port = 1234
     query_path = "/api/endpoint/sparql"
 
+    def __init__(self):
+        self.query_timeout_s: float | None = None     # set by the campaign
+
+    def server_timeout_s(self) -> int:
+        """qEndpoint's own query timeout (property maxTimeout, default 300 s) one second past the client's."""
+        return math.ceil(self.query_timeout_s) + 1 if self.query_timeout_s else 300
+
     def _launch(self, store: Path) -> None:
-        script = f"cd {STATE_DIR} && exec java -jar -Xmx{resources.QENDPOINT_HEAP} /app/qendpoint.jar"
+        script = (f"cd {STATE_DIR} && exec java -jar -Xmx{resources.QENDPOINT_HEAP} /app/qendpoint.jar "
+                  f"--maxTimeout={self.server_timeout_s()}")
         docker.run_detached(self.container, self.image, ["-c", script], ports={self.port: self.port},
                             volumes=[f"{store}:{STATE_DIR}"], extra=["--entrypoint", "sh"])
 
@@ -70,4 +79,4 @@ class QEndpoint(ServerSystem):
         docker.wait_until(self.ready, timeout_s=self.ready_timeout_s,
                           alive=lambda: docker.is_running(self.container), what="qendpoint")
         return ServerHandle(self.system_id, self.container, self.endpoint, time.monotonic() - started,
-                            extra={"heap": resources.QENDPOINT_HEAP})
+                            extra={"heap": resources.QENDPOINT_HEAP, "server_query_timeout_s": self.server_timeout_s()})

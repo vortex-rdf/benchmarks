@@ -49,6 +49,8 @@ def provenance() -> dict:
 # Fluree bulk import (`fluree create --from`): memory budget and parse threads (its default is 80% of the host RAM).
 FLUREE_IMPORT_MEMORY_MB = int(SYSTEM_MEMORY_GIB * 1024 * 0.7)
 FLUREE_IMPORT_THREADS = 6
+# Fluree server cache: its documented default (35% of RAM on hosts >= 8 GB), set explicitly against the cgroup budget.
+FLUREE_CACHE_MB = int(SYSTEM_MEMORY_GIB * 1024 * 0.35)
 # MillenniumDB 1.0.0 server buffers (the Sparqloscope setup guidance for 32/64 GiB hosts: about 70% for the versioned buffer).
 MDB_VERSIONED_BUFFER = f"{max(1, round(38 * _SCALE))}GB"
 MDB_PRIVATE_BUFFER = "2GB"
