@@ -161,3 +161,24 @@ class FingerprintColumnOrderTests(unittest.TestCase):
         spec = normalize_sparql_json_result({'head': {'vars': ['p', 'v', 'n']}, 'results': {'bindings': []}}, query)
         comunica = normalize_sparql_json_result({'head': {}, 'results': {'bindings': []}}, query)
         self.assertEqual(spec['result_fingerprint'], comunica['result_fingerprint'])
+
+
+class PrepareWorkerTest(unittest.TestCase):
+    def test_server_killed_while_worker_restarts(self):
+        from benchmark_core.http_runner.runner import _prepare_worker
+
+        class Worker:
+            calls = 0
+
+            def prepare_for_attempt(self):
+                self.calls += 1
+                if self.calls == 1:
+                    raise RuntimeError("cannot resolve direct address of the container")
+                return True
+
+        recovered = []
+        worker = Worker()
+        self.assertTrue(_prepare_worker(worker, lambda: recovered.append(1)))
+        self.assertEqual((worker.calls, recovered), (2, [1]))
+        with self.assertRaises(RuntimeError):
+            _prepare_worker(Worker(), None)

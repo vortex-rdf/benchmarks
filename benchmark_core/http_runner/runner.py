@@ -245,7 +245,7 @@ def run_system(*, manifest: Mapping[str, Any], system: str, experiment_id: str, 
                 else:
                     if sampler is not None:
                         sampler.set_phase(phase)
-                    if worker.prepare_for_attempt() and sampler is not None:
+                    if _prepare_worker(worker, after_timeout) and sampler is not None:
                         sampler.set_phase("restart_load_or_parse")
                         sampler.snapshot()
                         sampler.set_phase(phase)
@@ -325,6 +325,18 @@ def _apply_outcome(record: dict[str, Any], outcome: QueryOutcome, attempt_ns: in
             raise RuntimeError(f"worker metadata conflicts with existing field: {key}; "
                                f"query={record[key]!r}; worker={value!r}")
         record[key] = value
+
+
+def _prepare_worker(worker, after_timeout) -> bool:
+    """Start a fresh client for the next attempt. A server killed meanwhile (an abandoned query ran it out of memory)
+    makes the client fail to start: restart the server, untimed, and try once more."""
+    try:
+        return worker.prepare_for_attempt()
+    except RuntimeError:
+        if after_timeout is None:
+            raise
+        after_timeout()
+        return worker.prepare_for_attempt()
 
 
 def _line(kind: str, ordinal: int, total: int, system: str, record: dict[str, Any],

@@ -28,8 +28,8 @@ class Fluree(ServerSystem):
         self.query_timeout_s: float | None = None     # set by the campaign
 
     def server_environment(self) -> dict[str, str]:
-        """Fluree's own query timeout one second past the client's (its default is 15 minutes, and abandoned
-        queries piling up got it OOM-killed on WatDiv 10M), and its cache budget made explicit."""
+        """Fluree's own query timeout one second past the client's (its default is 15 minutes; it covers query
+        execution, not building a very large result), and its cache budget made explicit."""
         timeout_ms = (math.ceil(self.query_timeout_s) + 1) * 1000 if self.query_timeout_s else 60_000
         return {"FLUREE_QUERY_TIMEOUT_MS": str(timeout_ms), "FLUREE_CACHE_MAX_MB": str(resources.FLUREE_CACHE_MB)}
 
