@@ -19,6 +19,11 @@ from benchmark_core.systems.base import ServerHandle, ServerSystem
 QENDPOINT_VERSION = "2.5.4"
 QENDPOINT_IMAGE = f"vortex-rdf-bench/qendpoint:{QENDPOINT_VERSION}"
 STATE_DIR = "/data"             # working directory of the endpoint; its repository is ./qendpoint/
+# The image's own HDT spec plus a cap on the N-Triples bytes per load chunk. Without it the chunk size follows the heap,
+# and with a 40 GB heap one DBpedia chunk's dictionary section passed Java's 2 GiB array limit ("Required array length
+# 2147483639 + 1429 is too large" in PFCDictionarySection). A chunk's strings cannot exceed its input, so 1.8 GB chunks
+# stay below the limit. It only changes how the store is built; queries are served the same way.
+HDT_SPEC = "dictionary.type=dictionaryFourBig;rdffluxstop.type=size:1800000000"
 
 
 class QEndpoint(ServerSystem):
@@ -39,7 +44,7 @@ class QEndpoint(ServerSystem):
 
     def _launch(self, store: Path) -> None:
         script = (f"cd {STATE_DIR} && exec java -jar -Xmx{resources.QENDPOINT_HEAP} /app/qendpoint.jar "
-                  f"--maxTimeout={self.server_timeout_s()}")
+                  f"--maxTimeout={self.server_timeout_s()} '--hdtSpecification={HDT_SPEC}'")
         docker.run_detached(self.container, self.image, ["-c", script], ports={self.port: self.port},
                             volumes=[f"{store}:{STATE_DIR}"], extra=["--entrypoint", "sh"])
 
