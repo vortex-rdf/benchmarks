@@ -61,7 +61,7 @@ def main() -> None:
                                   "timeout_s": args.timeout_s, "quarantine": args.quarantine, "page_cache": cache,
                                   "start_to_ready_s": handle.start_to_ready_s, "image": system.image}) + "\n")
             for position, query in enumerate(queries):
-                template = query.get("bsbm_template_id")
+                template = query.get("bsbm_template_id") or query.get("template_id")     # as the runner's quarantine
                 row = {"position": position, "query_id": query["query_id"], "template": template,
                        "phase": query.get("stream_phase")}
                 if args.quarantine and timeouts.get(template, 0) >= args.quarantine:
