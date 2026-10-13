@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 import math
+import re
+import shutil
+import subprocess
 import time
 from pathlib import Path
 from typing import Any
@@ -13,6 +16,21 @@ FLUREE_VERSION = "4.2.3"
 FLUREE_IMAGE = f"vortex-rdf-bench/fluree:{FLUREE_VERSION}"
 LEDGER = "bench"
 STATE_DIR = "/var/lib/fluree"       # the image's working directory and volume: .fluree/ (config and storage)
+# `fluree create --from <one large .nt>` splits the file itself and, on the DBpedia N-Triples, silently stopped after 6
+# chunks (31.8M of 232.5M triples, exit code 0). A directory of line-aligned pieces imports completely.
+SPLIT_ABOVE_BYTES = 700 * 1024 * 1024
+PIECE_SIZE = "512M"
+
+
+def check_import(logs: str, source_triples: int) -> int:
+    """Fail unless the import reports about as many flakes as the source has triples (it prints millions, one decimal)."""
+    match = re.search(r"Imported ([\d.]+)M flakes", logs)
+    if match is None:
+        raise RuntimeError("fluree create did not report the imported flake count")
+    flakes_m = float(match.group(1))
+    if flakes_m < source_triples / 1e6 * 0.98 - 0.06:
+        raise RuntimeError(f"fluree imported {flakes_m}M flakes from {source_triples:,} source triples")
+    return int(flakes_m * 1e6)
 
 
 class Fluree(ServerSystem):
@@ -40,17 +58,36 @@ class Fluree(ServerSystem):
             raise FileExistsError(f"ledger directory is not empty: {store} (refusing to overwrite)")
         store.mkdir(parents=True, exist_ok=True)
         store.chmod(0o777)      # the image runs as uid 1000
-        script = (f"cd {STATE_DIR} && fluree init && fluree create {LEDGER} --from /source/{source.name} "
+        result_extra: dict[str, Any] = {}
+        mount, origin = source.parent, f"/source/{source.name}"
+        pieces = None
+        if source.suffix == ".nt" and source.stat().st_size > SPLIT_ABOVE_BYTES:
+            pieces = store.with_name(store.name + ".pieces")
+            began = time.monotonic()
+            pieces.mkdir(parents=True)
+            subprocess.run(["split", "-C", PIECE_SIZE, "-d", "-a", "4", "--additional-suffix=.nt", str(source),
+                            str(pieces / "part-")], check=True)
+            result_extra["source_split_s"] = round(time.monotonic() - began, 1)    # not part of the measured build
+            result_extra["source_pieces"] = len(list(pieces.iterdir()))
+            mount, origin = pieces, "/source"
+        counted = subprocess.run(["grep", "-c", "-v", "-e", "^$", "-e", "^#", str(source)], capture_output=True, text=True)
+        source_triples = int(counted.stdout.strip())
+        script = (f"cd {STATE_DIR} && fluree init && fluree create {LEDGER} --from {origin} "
                   f"--memory-budget-mb {resources.FLUREE_IMPORT_MEMORY_MB} --parallelism {resources.FLUREE_IMPORT_THREADS}")
         try:
             result = self.measured_one_shot(
                 f"{self.container}-import", self.image, ["-c", script],
-                volumes=[f"{source.parent}:/source:ro", f"{store}:{STATE_DIR}"], timeout_s=timeout_s,
+                volumes=[f"{mount}:/source:ro", f"{store}:{STATE_DIR}"], timeout_s=timeout_s,
                 extra=["--entrypoint", "sh"])
         finally:
             docker.make_user_writable(store, self.image)
+            if pieces is not None:
+                shutil.rmtree(pieces, ignore_errors=True)
         if result.get("exit_code") != 0:
             raise RuntimeError(f"fluree create failed: {result.get('error') or result.get('logs')}")
+        result["imported_flakes"] = check_import(result.get("logs", ""), source_triples)
+        result["source_triples"] = source_triples
+        result.update(result_extra)
         result["representation_size_bytes"] = sum(p.stat().st_size for p in store.rglob("*") if p.is_file())
         return {"build": result}
 

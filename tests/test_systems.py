@@ -118,3 +118,15 @@ class SettleTest(unittest.TestCase):
             started = time.monotonic()
             self.assertFalse(system.settle(timeout_s=60))
             self.assertLess(time.monotonic() - started, 1.0)
+
+
+class FlureeImportCheckTest(unittest.TestCase):
+    def test_incomplete_import_is_rejected(self):
+        from benchmark_core.systems.fluree import check_import
+
+        self.assertEqual(check_import("Imported 35.2M flakes in 90s across 12 commits", 35_159_904), 35_200_000)
+        self.assertEqual(check_import("Imported 0.3M flakes in 1s", 301_000), 300_000)
+        with self.assertRaises(RuntimeError):
+            check_import("Imported 31.8M flakes in 55.41s across 6 commits", 232_541_923)
+        with self.assertRaises(RuntimeError):
+            check_import("no summary", 10)
