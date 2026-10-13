@@ -60,7 +60,9 @@ class QEndpoint(ServerSystem):
                 ["curl", "-sS", "--fail-with-body", "--max-time", str(int(timeout_s)), "-F", f"file=@{source}",
                  f"http://localhost:{self.port}/api/endpoint/load"], capture_output=True, text=True)
             if upload.returncode != 0:
-                raise RuntimeError(f"qendpoint load failed: {(upload.stderr or upload.stdout)[-600:]}")
+                server = subprocess.run(["docker", "logs", "--tail", "80", self.container], capture_output=True, text=True)
+                raise RuntimeError(f"qendpoint load failed: {upload.stderr.strip()[-300:]} | response: "
+                                   f"{upload.stdout[-1500:]} | server log: {(server.stdout + server.stderr)[-4000:]}")
             logs = (upload.stdout or "")[-800:]
         finally:
             memory = sampler.stop()
