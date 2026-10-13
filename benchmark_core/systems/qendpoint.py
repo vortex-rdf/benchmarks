@@ -19,11 +19,12 @@ from benchmark_core.systems.base import ServerHandle, ServerSystem
 QENDPOINT_VERSION = "2.5.4"
 QENDPOINT_IMAGE = f"vortex-rdf-bench/qendpoint:{QENDPOINT_VERSION}"
 STATE_DIR = "/data"             # working directory of the endpoint; its repository is ./qendpoint/
-# The image's own HDT spec plus a cap on the N-Triples bytes per load chunk. Without it the chunk size follows the heap,
-# and with a 40 GB heap one DBpedia chunk's dictionary section passed Java's 2 GiB array limit ("Required array length
-# 2147483639 + 1429 is too large" in PFCDictionarySection). A chunk's strings cannot exceed its input, so 1.8 GB chunks
-# stay below the limit. It only changes how the store is built; queries are served the same way.
-HDT_SPEC = "dictionary.type=dictionaryFourBig;rdffluxstop.type=size:1800000000"
+# qEndpoint 2.5.4 takes the HDT spec of a load from the repository model (repo_model.ttl, mdlc:hdtSpec, default ""),
+# which overrides the image's hdtSpecification=dictionary.type=dictionaryFourBig. With the default four-section
+# dictionary one DBpedia section passed Java's 2 GiB array limit ("Required array length 2147483639 + 1429 is too large"
+# in PFCDictionarySection). The model below makes the image's own spec effective.
+HDT_SPEC = "dictionary.type=dictionaryFourBig"
+REPO_MODEL = f'@prefix mdlc: <http://the-qa-company.com/modelcompiler/> .\nmdlc:main mdlc:hdtSpec "{HDT_SPEC}" .\n'
 
 
 class QEndpoint(ServerSystem):
@@ -44,7 +45,7 @@ class QEndpoint(ServerSystem):
 
     def _launch(self, store: Path) -> None:
         script = (f"cd {STATE_DIR} && exec java -jar -Xmx{resources.QENDPOINT_HEAP} /app/qendpoint.jar "
-                  f"--maxTimeout={self.server_timeout_s()} '--hdtSpecification={HDT_SPEC}'")
+                  f"--maxTimeout={self.server_timeout_s()}")
         docker.run_detached(self.container, self.image, ["-c", script], ports={self.port: self.port},
                             volumes=[f"{store}:{STATE_DIR}"], extra=["--entrypoint", "sh"])
 
@@ -55,6 +56,10 @@ class QEndpoint(ServerSystem):
             raise FileExistsError(f"endpoint directory is not empty: {store} (refusing to overwrite)")
         store.mkdir(parents=True, exist_ok=True)
         store.chmod(0o777)
+        model = store / "qendpoint" / "repo_model.ttl"      # read by the endpoint at its first start
+        model.parent.mkdir()
+        model.parent.chmod(0o777)
+        model.write_text(REPO_MODEL, encoding="utf-8")
         started = time.perf_counter_ns()
         self._launch(store)
         sampler = self.sample_container(self.container)
@@ -75,7 +80,7 @@ class QEndpoint(ServerSystem):
             docker.make_user_writable(store, self.image)
         size = sum(p.stat().st_size for p in (store / "qendpoint" / "hdt-store").rglob("*") if p.is_file())
         return {"build": {"elapsed_ns": time.perf_counter_ns() - started, "memory": memory, "logs": logs,
-                          "representation_size_bytes": size}}
+                          "representation_size_bytes": size, "hdt_spec": HDT_SPEC}}
 
     def start(self, *, source: Path | None, store: Path | None) -> ServerHandle:
         self.ensure_image()
