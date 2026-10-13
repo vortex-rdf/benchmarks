@@ -74,7 +74,7 @@ class ExperimentDeclarationTests(unittest.TestCase):
             self.assertEqual(value["workload"], workload)
             self.assertEqual(value["experiment"], experiment)
             self.assertEqual(set(value["representations"]), expected_representations)
-            self.assertEqual(len(value["bindings"]), 14 if "100m" in name else 17)   # 100m: new systems added after its run
+            self.assertEqual(len(value["bindings"]), 17)
             self.assertEqual(value["execution_policy"], {
                 "warmup_runs": 0,
                 "measured_runs": 1,
