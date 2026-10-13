@@ -105,3 +105,16 @@ class VortexLayoutIdTests(unittest.TestCase):
         self.assertFalse(RdflibEndpoint("vortex-rdf/dictionary-no-index-no-pushdown").pushdown)
         self.assertFalse(matches("vortex-rdf/default-no-index-no-pushdown"))
         self.assertFalse(matches("vortex-rdf/typed-object-no-index"))
+
+
+class SettleTest(unittest.TestCase):
+    def test_settle_returns_at_once_when_the_container_died(self):
+        import time
+        from unittest import mock
+        from benchmark_core.systems import docker
+
+        system = get_system("fluree/default")
+        with mock.patch.object(docker, "is_running", return_value=False):
+            started = time.monotonic()
+            self.assertFalse(system.settle(timeout_s=60))
+            self.assertLess(time.monotonic() - started, 1.0)

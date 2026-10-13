@@ -142,13 +142,13 @@ def _run_one(system_id: str, representation: str, declared: dict[str, Any], root
         def after_timeout() -> None:
             """Untimed recovery after a timeout or a lost connection: restart a dead container at once,
             otherwise wait until the server is idle again (it restarts itself if it cannot)."""
+            if docker.is_running(handle.container):
+                system.settle()               # returns at once if the container dies while it waits
             if not docker.is_running(handle.container):
                 began = time.monotonic()
                 docker.remove(handle.container)
                 system.start(source=source, store=store)
                 restarts.append({"reason": "container-exited", "seconds": round(time.monotonic() - began, 1)})
-            else:
-                system.settle()
         summary = run_system(
             manifest=manifest, system=system_id, experiment_id=experiment, endpoint=handle.endpoint,
             container=handle.container, output=output, profile=profile, after_timeout=after_timeout,

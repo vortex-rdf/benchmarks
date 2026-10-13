@@ -81,6 +81,8 @@ class ServerSystem(abc.ABC):
         """
         deadline = time.monotonic() + timeout_s
         while time.monotonic() < deadline:
+            if not docker.is_running(self.container):
+                return False                      # died meanwhile (out of memory); the caller restarts it
             started = time.monotonic()
             try:
                 self.idle_probe()
