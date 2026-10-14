@@ -32,7 +32,7 @@ BENCHMARK_CORE = Path(__file__).resolve().parents[1]      # mounted into the con
 IMAGE_REPOSITORY = "vortex-rdf-bench/rdflib-endpoint"
 DEFAULT_VORTEX_RDFLIB = "0.1.3"
 # vortex-rdflib minor version -> the vortex-rdf it requires
-VORTEX_RDF_FOR = {"0.1": "0.10.0", "0.2": "0.11.0"}
+VORTEX_RDF_FOR = {"0.1": "0.10.0", "0.2": "0.11.0", "0.3": "0.12.1"}
 PASSTHROUGH = ("VORTEX_RDF_NATIVE_FILTERS", "VORTEX_RDF_FILTER_FAST", "VORTEX_RDF_DISABLE_CODE_PATH",
                "VORTEX_RDF_DICT_MAX_RESIDENT_BYTES", "VORTEX_RDF_DICT_MAX_RESIDENT_TERMS", "VORTEX_RDF_PUSHDOWN_OPS")
 _VORTEX_ID = re.compile(r"^vortex-rdf/(dictionary|default)-(secondary-by-copy|secondary-by-reference|no-index)"

@@ -1,0 +1,29 @@
+{
+  "benchmark": "watdiv",
+  "bindings": [
+    {
+      "representation": "vortex-rdf/dictionary-secondary-by-reference",
+      "system": "vortex-rdf/dictionary-secondary-by-reference"
+    },
+    {
+      "representation": "vortex-rdf/dictionary-secondary-by-reference",
+      "system": "vortex-rdf/dictionary-secondary-by-reference-memory"
+    }
+  ],
+  "dataset": "watdiv-100m",
+  "execution_policy": {
+    "measured_runs": 1,
+    "timeout_s": 10.0,
+    "warmup_runs": 0
+  },
+  "experiment": "watdiv/watdiv-100m/full-vrl0.3.0",
+  "inventory": "data/generated/watdiv-100m/hdt/dataset-inventory.json",
+  "representations": {
+    "cottas/default": "data/generated/watdiv-100m/cottas/cottas-receipt.json",
+    "hdt/default": "data/generated/watdiv-100m/hdt/hdt-receipt.json",
+    "rdf/source": "data/generated/watdiv-100m/hdt/rdf-source-receipt.json",
+    "vortex-rdf/dictionary-secondary-by-reference": "data/generated/watdiv-100m/hdt/vortex-rdf-0.12.1/vortex-rdf-dictionary-secondary-by-reference-receipt.json"
+  },
+  "schema": "rdf-experiment-declaration-v1",
+  "workload": "watdiv-stress-1000"
+}

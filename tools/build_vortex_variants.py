@@ -3,12 +3,14 @@
 
     python tools/build_vortex_variants.py --source BSBM/data/explore-10k/dataset.nt \
         --benchmark bsbm --dataset explore-10k --triple-count 3421251 \
-        [--variants default-no-index default-secondary-by-reference ...]
+        [--variants default-no-index default-secondary-by-reference ...] [--out-subdir vortex-rdf-0.12.1]
 
 Variants are ``<layout>-<index>`` with layout in {dictionary, default} and index in {no-index,
 secondary-by-reference, secondary-by-copy}. Each writes ``dataset-<variant>.vortex`` and
 ``vortex-rdf-<variant>-receipt.json`` next to the source (representation ``vortex-rdf/<variant>``) and
-is added to ``dataset-inventory.json``. Existing outputs are never overwritten. The builder runs in its
+is added to ``dataset-inventory.json``. ``--out-subdir`` writes them into a subdirectory of the source's directory
+instead (for stores of another vortex-rdf store format; the inventory is then left alone). Existing outputs are
+never overwritten. The builder runs in its
 own cgroup scope (``benchmark_core.build_metrics``), as the other representation builds do.
 """
 from __future__ import annotations
@@ -38,9 +40,10 @@ def split(variant: str) -> tuple[str, str]:
     return layout, index
 
 
-def build(source: Path, benchmark: str, dataset: str, triple_count: int, variant: str) -> dict:
+def build(source: Path, benchmark: str, dataset: str, triple_count: int, variant: str, out_subdir: str = "") -> dict:
     layout, index = split(variant)
-    out_dir = source.parent
+    out_dir = source.parent / out_subdir
+    out_dir.mkdir(exist_ok=True)
     output = out_dir / f"dataset-{variant}.vortex"
     receipt = out_dir / f"vortex-rdf-{variant}-receipt.json"
     if output.exists() or receipt.exists():
@@ -67,7 +70,7 @@ def build(source: Path, benchmark: str, dataset: str, triple_count: int, variant
                      "source_triple_count": triple_count, "build_metrics": metrics},
     })
     inventory = out_dir / "dataset-inventory.json"
-    if inventory.is_file():
+    if not out_subdir and inventory.is_file():
         value = json.loads(inventory.read_text())
         entries = [e for e in value["representations"] if e["representation"] != f"vortex-rdf/{variant}"]
         value["representations"] = entries + [{"representation": f"vortex-rdf/{variant}", "receipt": receipt.name}]
@@ -83,9 +86,11 @@ def main() -> int:
     parser.add_argument("--dataset", required=True)
     parser.add_argument("--triple-count", type=int, required=True)
     parser.add_argument("--variants", nargs="+", default=NEW_VARIANTS)
+    parser.add_argument("--out-subdir", default="")
     args = parser.parse_args()
     for variant in args.variants:
-        print(json.dumps(build(args.source.resolve(), args.benchmark, args.dataset, args.triple_count, variant)),
+        print(json.dumps(build(args.source.resolve(), args.benchmark, args.dataset, args.triple_count, variant,
+                               args.out_subdir)),
               flush=True)
     return 0
 

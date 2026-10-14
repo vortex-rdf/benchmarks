@@ -5,7 +5,8 @@
 #   docker build -t vortex-rdf-bench/rdflib-endpoint:vrl-0.1.3 \
 #       --build-arg VORTEX_RDFLIB_VERSION=0.1.3 --build-arg VORTEX_RDF_VERSION=0.10.0 docker/rdflib-endpoint
 #
-# vortex-rdflib 0.1.x needs vortex-rdf 0.10.x; vortex-rdflib 0.2.x needs vortex-rdf 0.11.x.
+# vortex-rdflib 0.1.x needs vortex-rdf 0.10.x; vortex-rdflib 0.2.x needs vortex-rdf 0.11.x; vortex-rdflib 0.3.x needs vortex-rdf
+# 0.12.1+, whose store format v2 refuses stores written by vortex-rdf 0.11 or earlier.
 ARG PYTHON_IMAGE=python:3.13-slim-bookworm
 FROM ${PYTHON_IMAGE}
 

@@ -1,0 +1,47 @@
+{
+  "benchmark": "bsbm",
+  "bindings": [
+    {
+      "representation": "vortex-rdf/dictionary-secondary-by-reference",
+      "system": "vortex-rdf/dictionary-secondary-by-reference"
+    },
+    {
+      "representation": "vortex-rdf/dictionary-secondary-by-reference",
+      "system": "vortex-rdf/dictionary-secondary-by-reference-memory"
+    },
+    {
+      "representation": "vortex-rdf/dictionary-secondary-by-copy",
+      "system": "vortex-rdf/dictionary-secondary-by-copy"
+    },
+    {
+      "representation": "vortex-rdf/dictionary-secondary-by-copy",
+      "system": "vortex-rdf/dictionary-secondary-by-copy-memory"
+    },
+    {
+      "representation": "vortex-rdf/dictionary-no-index",
+      "system": "vortex-rdf/dictionary-no-index"
+    },
+    {
+      "representation": "vortex-rdf/dictionary-no-index",
+      "system": "vortex-rdf/dictionary-no-index-memory"
+    }
+  ],
+  "dataset": "explore-100k",
+  "execution_policy": {
+    "measured_runs": 1,
+    "timeout_s": 10.0,
+    "warmup_runs": 0
+  },
+  "experiment": "bsbm/explore-100k/explore-full-vrl0.3.0",
+  "inventory": "data/explore-100k/dataset-inventory.json",
+  "representations": {
+    "cottas/default": "data/explore-100k/cottas-default-receipt.json",
+    "hdt/default": "data/explore-100k/hdt-default-receipt.json",
+    "rdf/source": "data/explore-100k/rdf-source-receipt.json",
+    "vortex-rdf/dictionary-no-index": "data/explore-100k/vortex-rdf-0.12.1/vortex-rdf-dictionary-no-index-receipt.json",
+    "vortex-rdf/dictionary-secondary-by-copy": "data/explore-100k/vortex-rdf-0.12.1/vortex-rdf-dictionary-secondary-by-copy-receipt.json",
+    "vortex-rdf/dictionary-secondary-by-reference": "data/explore-100k/vortex-rdf-0.12.1/vortex-rdf-dictionary-secondary-by-reference-receipt.json"
+  },
+  "schema": "rdf-experiment-declaration-v1",
+  "workload": "bsbm-explore-100k-full"
+}
