@@ -78,13 +78,16 @@ def main() -> None:
                     body = json.loads(raw)
                     if response.status == 200 and body.get("status") == "OK":
                         row |= {"status": "ok"} | split(body)
-                    else:
-                        timed_out = "timeout" in str(body.get("exception", "")).lower() or "time limit" in str(body).lower()
+                    else:   # QLever answers a timeout with 429 "Operation timed out"
+                        timed_out = response.status == 429 or "timed out" in str(body.get("exception", "")).lower()
                         row |= {"status": "timeout" if timed_out else "error", "http_status": response.status,
                                 "message": str(body.get("exception", ""))[:300]}
                 except (TimeoutError, OSError, http.client.HTTPException, json.JSONDecodeError) as error:
-                    row |= {"status": "timeout" if isinstance(error, TimeoutError) else "error", "message": repr(error)[:300],
-                            "client_ms": (time.perf_counter_ns() - started) / 1e6}
+                    elapsed_ms = (time.perf_counter_ns() - started) / 1e6
+                    # a timeout while a large result streams leaves the body cut off mid-JSON
+                    timed_out = isinstance(error, TimeoutError) or elapsed_ms >= args.timeout_s * 1000
+                    row |= {"status": "timeout" if timed_out else "error", "message": repr(error)[:300],
+                            "client_ms": elapsed_ms}
                     connection.close()
                     connection = http.client.HTTPConnection(host.hostname, host.port, timeout=args.timeout_s + 5)
                 if row["status"] == "timeout":
