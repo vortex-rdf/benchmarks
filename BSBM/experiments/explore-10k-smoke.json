@@ -1,0 +1,137 @@
+{
+  "benchmark": "bsbm",
+  "bindings": [
+    {
+      "representation": "rdf/source",
+      "system": "fuseki/memory"
+    },
+    {
+      "representation": "rdf/source",
+      "system": "fuseki/tdb2"
+    },
+    {
+      "representation": "rdf/source",
+      "system": "virtuoso/default"
+    },
+    {
+      "representation": "rdf/source",
+      "system": "qlever/default"
+    },
+    {
+      "representation": "rdf/source",
+      "system": "oxigraph/memory"
+    },
+    {
+      "representation": "rdf/source",
+      "system": "oxigraph/rocksdb"
+    },
+    {
+      "representation": "hdt/default",
+      "system": "hdt-rdflib/optimized-in-memory"
+    },
+    {
+      "representation": "hdt/default",
+      "system": "comunica/hdt"
+    },
+    {
+      "representation": "cottas/default",
+      "system": "pycottas/default"
+    },
+    {
+      "representation": "rdf/source",
+      "system": "rdflib/default"
+    },
+    {
+      "representation": "vortex-rdf/dictionary-secondary-by-reference",
+      "system": "vortex-rdf/dictionary-secondary-by-reference"
+    },
+    {
+      "representation": "vortex-rdf/dictionary-secondary-by-reference",
+      "system": "vortex-rdf/dictionary-secondary-by-reference-memory"
+    },
+    {
+      "representation": "vortex-rdf/dictionary-secondary-by-copy",
+      "system": "vortex-rdf/dictionary-secondary-by-copy"
+    },
+    {
+      "representation": "vortex-rdf/dictionary-secondary-by-copy",
+      "system": "vortex-rdf/dictionary-secondary-by-copy-memory"
+    },
+    {
+      "representation": "vortex-rdf/dictionary-no-index",
+      "system": "vortex-rdf/dictionary-no-index"
+    },
+    {
+      "representation": "vortex-rdf/dictionary-no-index",
+      "system": "vortex-rdf/dictionary-no-index-memory"
+    },
+    {
+      "representation": "vortex-rdf/default-no-index",
+      "system": "vortex-rdf/default-no-index"
+    },
+    {
+      "representation": "vortex-rdf/default-no-index",
+      "system": "vortex-rdf/default-no-index-memory"
+    },
+    {
+      "representation": "vortex-rdf/default-secondary-by-reference",
+      "system": "vortex-rdf/default-secondary-by-reference"
+    },
+    {
+      "representation": "vortex-rdf/default-secondary-by-reference",
+      "system": "vortex-rdf/default-secondary-by-reference-memory"
+    },
+    {
+      "representation": "vortex-rdf/default-secondary-by-copy",
+      "system": "vortex-rdf/default-secondary-by-copy"
+    },
+    {
+      "representation": "vortex-rdf/default-secondary-by-copy",
+      "system": "vortex-rdf/default-secondary-by-copy-memory"
+    },
+    {
+      "representation": "rdf/source",
+      "system": "fluree/default"
+    },
+    {
+      "representation": "rdf/source",
+      "system": "millenniumdb/default"
+    },
+    {
+      "representation": "rdf/source",
+      "system": "qendpoint/hdt"
+    }
+  ],
+  "dataset": "explore-10k",
+  "execution_policy": {
+    "manual_query_flavour_skips": [
+      {
+        "bsbm_template_ids": [
+          "5",
+          "10"
+        ],
+        "policy_id": "cottas-bsbm-10k-known-timeouts-v1",
+        "reason": "Known 60-second timeout in the validated BSBM 10k smoke run; keep the omission visible",
+        "system": "pycottas/default"
+      }
+    ],
+    "measured_runs": 1,
+    "timeout_s": 60.0,
+    "warmup_runs": 0
+  },
+  "experiment": "bsbm/explore-10k/explore-smoke",
+  "inventory": "data/explore-10k/dataset-inventory.json",
+  "representations": {
+    "cottas/default": "data/explore-10k/cottas-default-receipt.json",
+    "hdt/default": "data/explore-10k/hdt-default-receipt.json",
+    "rdf/source": "data/explore-10k/rdf-source-receipt.json",
+    "vortex-rdf/default-no-index": "data/explore-10k/vortex-rdf-default-no-index-receipt.json",
+    "vortex-rdf/default-secondary-by-copy": "data/explore-10k/vortex-rdf-default-secondary-by-copy-receipt.json",
+    "vortex-rdf/default-secondary-by-reference": "data/explore-10k/vortex-rdf-default-secondary-by-reference-receipt.json",
+    "vortex-rdf/dictionary-no-index": "data/explore-10k/vortex-rdf-dictionary-no-index-receipt.json",
+    "vortex-rdf/dictionary-secondary-by-copy": "data/explore-10k/vortex-rdf-dictionary-secondary-by-copy-receipt.json",
+    "vortex-rdf/dictionary-secondary-by-reference": "data/explore-10k/vortex-rdf-dictionary-secondary-by-reference-receipt.json"
+  },
+  "schema": "rdf-experiment-declaration-v1",
+  "workload": "bsbm-explore-10k-smoke"
+}

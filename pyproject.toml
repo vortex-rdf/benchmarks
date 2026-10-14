@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vortex-rdf-benchmarks"
+version = "0.1.0"
+description = "Standalone contracts and tools for vortex-rdf benchmarks"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {file = "LICENSE"}
+authors = [{name = "Vortex RDF"}]
+dependencies = ["rdflib==7.6.0", "requests>=2.31", "psutil>=5.9"]
+
+[project.optional-dependencies]
+# Only needed to build representations (see REPRODUCING.md); running servers over HTTP needs neither.
+vortex = ["vortex-rdflib>=0.1.3"]
+cottas = ["pycottas==1.1.0"]
+test = ["pytest"]
+
+[project.scripts]
+vortex-rdf-bench = "benchmark_core.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["benchmark_core*", "DBBench*", "BSBM*", "WatDiv*"]

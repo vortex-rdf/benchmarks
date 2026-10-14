@@ -1,0 +1,24 @@
+{
+  "_comment": "Expected identities of the DBBench DBpedia inputs used for the paper.",
+  "dbpedia-en-all": {
+    "dataset": {
+      "sha256": "2a6949c60134a5d453c4b9d2723a7e04a710fdcf5c3ebb34ee3a7f04f262d4ba",
+      "size_bytes": 35559994218,
+      "triple_count": 232541923
+    }
+  },
+  "tp3-schedule": {
+    "queries": 15683,
+    "warmup": 3625,
+    "measured_tp": 10875,
+    "measured_joins": 1183,
+    "tp_passes": 3,
+    "records_sha256": "bd002740123457dc6118519785e4992a04ac72f321436522ddd606767efc6346",
+    "note": "records_sha256 = DBBench.schedule.records_sha256; equals the manifest used for the paper (dbbench-dbpedia-tp3-v1)."
+  },
+  "query_tree": {
+    "sha256": "606d90ee0521c27b3b1e3e7a653da69a6d3efc82c8917c9bb11ec2ef73af0173",
+    "selected_query_count": 4828,
+    "source": "https://dataweb.infor.uva.es/queries-k2triples.tgz"
+  }
+}

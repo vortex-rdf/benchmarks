@@ -5,6 +5,13 @@ Benchmarks vortex-rdf against [pycottas](https://github.com/cottas-rdf/pycottas)
 `Store`, so SPARQL evaluation is rdflib's engine for both — the store serving
 triple patterns is the only variable.
 
+> **Paper protocol.** The DBpedia experiments of the paper (all systems over SPARQL HTTP, phased TP3
+> schedule, count-only comparison) are documented in [../REPRODUCING.md](../REPRODUCING.md). Dataset
+> acquisition scripts are in `DBBench/utils/` (`download_dbpedia_3_5_1.sh`, `clean_dbpedia.sh`), the
+> expected identities in `DBBench/checksums.json`, and `vortex-rdf-bench dbbench schedule` produces the
+> TP3 schedule. Data is placed under `DBBench/data/` (git-ignored). The rdflib driver described below
+> measures the stores through rdflib instead.
+
 ## Layout
 
 ```
@@ -206,3 +213,29 @@ comparison, and a short `RESULTS.md` recording hardware, OS, engine
 versions, dataset size, and any environment knobs) into
 `DBBench/results/<run-id>/`. Raw per-run files can stay in `runs/` locally;
 only committed results are considered citable.
+
+
+## Public manifest preparation
+
+The repository provides one stable command for standalone use and KROWN integration:
+
+```bash
+vortex-rdf-bench dbbench prepare \
+  --inventory DBBench/runs/dbbench.queries.json \
+  --dataset dbpedia \
+  --output DBBench/runs/dbbench.manifest.json
+```
+
+The command also accepts `--query-root`, `--groups`, `--join-sizes`, and an optional
+`--query-id-file`. It writes a versioned manifest atomically and records source provenance.
+KROWN must call this public command instead of implementing DBBench workload rules itself.
+
+
+## RDFLib execution
+
+```bash
+vortex-rdf-bench dbbench run --manifest manifest.json --dataset-path data.ttl \
+  --output results.jsonl --experiment-id example
+```
+
+The command writes validated, versioned JSONL records atomically. Use `--resume` to keep completed runs.

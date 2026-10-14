@@ -1,0 +1,8 @@
+# COTTAS's own SPARQL endpoint (pycottas-endpoint), on the same image as the other rdflib systems so that only
+# the router differs. Its dependencies (fastapi, pycottas, rdflib) are already in the base image.
+#   docker build -t vortex-rdf-bench/pycottas-endpoint:0.5.3-vrl-0.1.3 -f docker/rdflib-endpoint/Dockerfile.pycottas-endpoint docker/rdflib-endpoint
+ARG BASE=vortex-rdf-bench/rdflib-endpoint:vrl-0.1.3
+FROM ${BASE}
+ARG PYCOTTAS_ENDPOINT_VERSION=0.5.3
+RUN pip install --no-cache-dir --no-deps "pycottas-endpoint==${PYCOTTAS_ENDPOINT_VERSION}"
+COPY serve_rdflib.py /app/serve_rdflib.py

@@ -1,0 +1,117 @@
+{
+  "benchmark": "dbbench",
+  "bindings": [
+    {
+      "representation": "rdf/source",
+      "system": "fuseki/memory"
+    },
+    {
+      "representation": "rdf/source",
+      "system": "fuseki/tdb2"
+    },
+    {
+      "representation": "rdf/source",
+      "system": "virtuoso/default"
+    },
+    {
+      "representation": "rdf/source",
+      "system": "qlever/default"
+    },
+    {
+      "representation": "rdf/source",
+      "system": "oxigraph/memory"
+    },
+    {
+      "representation": "rdf/source",
+      "system": "oxigraph/rocksdb"
+    },
+    {
+      "representation": "cottas/default",
+      "system": "pycottas/default"
+    },
+    {
+      "representation": "rdf/source",
+      "system": "rdflib/default"
+    },
+    {
+      "representation": "vortex-rdf/dictionary-secondary-by-reference",
+      "system": "vortex-rdf/dictionary-secondary-by-reference"
+    },
+    {
+      "representation": "vortex-rdf/dictionary-secondary-by-reference",
+      "system": "vortex-rdf/dictionary-secondary-by-reference-memory"
+    },
+    {
+      "representation": "vortex-rdf/dictionary-secondary-by-copy",
+      "system": "vortex-rdf/dictionary-secondary-by-copy"
+    },
+    {
+      "representation": "vortex-rdf/dictionary-secondary-by-copy",
+      "system": "vortex-rdf/dictionary-secondary-by-copy-memory"
+    },
+    {
+      "representation": "vortex-rdf/dictionary-no-index",
+      "system": "vortex-rdf/dictionary-no-index"
+    },
+    {
+      "representation": "vortex-rdf/dictionary-no-index",
+      "system": "vortex-rdf/dictionary-no-index-memory"
+    },
+    {
+      "representation": "vortex-rdf/default-no-index",
+      "system": "vortex-rdf/default-no-index"
+    },
+    {
+      "representation": "vortex-rdf/default-no-index",
+      "system": "vortex-rdf/default-no-index-memory"
+    },
+    {
+      "representation": "vortex-rdf/default-secondary-by-reference",
+      "system": "vortex-rdf/default-secondary-by-reference"
+    },
+    {
+      "representation": "vortex-rdf/default-secondary-by-reference",
+      "system": "vortex-rdf/default-secondary-by-reference-memory"
+    },
+    {
+      "representation": "vortex-rdf/default-secondary-by-copy",
+      "system": "vortex-rdf/default-secondary-by-copy"
+    },
+    {
+      "representation": "vortex-rdf/default-secondary-by-copy",
+      "system": "vortex-rdf/default-secondary-by-copy-memory"
+    },
+    {
+      "representation": "rdf/source",
+      "system": "millenniumdb/default"
+    },
+    {
+      "representation": "rdf/source",
+      "system": "qendpoint/hdt"
+    },
+    {
+      "representation": "rdf/source",
+      "system": "fluree/default"
+    }
+  ],
+  "dataset": "dbpedia-en-all",
+  "execution_policy": {
+    "measured_runs": 1,
+    "timeout_s": 5.0,
+    "warmup_runs": 0
+  },
+  "experiment": "dbbench/dbpedia-en-all/full",
+  "inventory": "data/dbpedia-en-all/dataset-inventory.json",
+  "representations": {
+    "cottas/default": "data/dbpedia-en-all/cottas-default-receipt.json",
+    "rdf/source": "data/dbpedia-en-all/rdf-source-receipt.json",
+    "vortex-rdf/default-no-index": "data/dbpedia-en-all/vortex-rdf-default-no-index-receipt.json",
+    "vortex-rdf/default-secondary-by-copy": "data/dbpedia-en-all/vortex-rdf-default-secondary-by-copy-receipt.json",
+    "vortex-rdf/default-secondary-by-reference": "data/dbpedia-en-all/vortex-rdf-default-secondary-by-reference-receipt.json",
+    "vortex-rdf/dictionary-no-index": "data/dbpedia-en-all/vortex-rdf-dictionary-no-index-receipt.json",
+    "vortex-rdf/dictionary-secondary-by-copy": "data/dbpedia-en-all/vortex-rdf-dictionary-secondary-by-copy-receipt.json",
+    "vortex-rdf/dictionary-secondary-by-reference": "data/dbpedia-en-all/vortex-rdf-dictionary-secondary-by-reference-receipt.json"
+  },
+  "schema": "rdf-experiment-declaration-v1",
+  "workload": "dbbench-dbpedia-full"
+}

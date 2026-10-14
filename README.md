@@ -6,7 +6,17 @@ serialization and queryable store built on the
 [Vortex](https://docs.vortex.dev) data format — against other RDF stores and
 serializations.
 
+## Reproducing the paper benchmarks
+
+**[REPRODUCING.md](REPRODUCING.md)** is the step-by-step guide: it generates the BSBM and DBpedia inputs,
+builds the Vortex-RDF stores, serves every system over SPARQL HTTP in Docker and measures them with one
+protocol (`vortex-rdf-bench run`). It starts with a Vortex-only quick start for BSBM 10K.
+
 ## Methodology
+
+The paper's numbers are measured **over SPARQL HTTP** for all systems (see REPRODUCING.md). The
+rdflib-store comparison described below, where every contender is an rdflib `Store` plugin and rdflib
+evaluates the SPARQL, remains available (`DBBench/` driver) and isolates the effect of the store.
 
 Wherever possible, engines are compared as **rdflib `Store` plugins**
 (vortex-rdflib, pycottas/COTTAS, and candidates such as
@@ -21,10 +31,10 @@ say so in their READMEs.
 
 | Benchmark | Workload | Status |
 |---|---|---|
-| [DBBench](DBBench/) | DBpedia triple-pattern + join workload from the pycottas experiments | **runnable** (migrated from `vortex-rdf/scripts/DBBench`) |
-| [WatDiv](WatDiv/) | Synthetic, structurally diverse BGPs (linear/star/snowflake/complex) | planned |
+| [DBBench](DBBench/) | DBpedia triple-pattern + join workload from the pycottas experiments | **runnable**; paper protocol in [REPRODUCING.md](REPRODUCING.md) |
+| [WatDiv](WatDiv/) | Synthetic, structurally diverse BGPs (linear/star/snowflake/complex) | adapter ready |
 | [WDBench](WDBench/) | Real Wikidata data (~1.25B triples) + real query-log patterns and paths | planned |
-| [BSBM](BSBM/) | E-commerce query mixes; broad SPARQL feature coverage | planned |
+| [BSBM](BSBM/) | E-commerce query mixes; broad SPARQL feature coverage | **reproducible** (10K, 100K; [guide](REPRODUCING.md)) |
 | [LUBM](LUBM/) | University domain; classic 14-query set, inference-oriented | planned |
 | [SP2Bench](SP2Bench/) | DBLP-like data; SPARQL operator-combination stress queries | planned |
 | [FEASIBLE](FEASIBLE/) | Representative query sets mined from real DBpedia query logs | planned |
@@ -37,7 +47,14 @@ comparison), and **DBPSB** (superseded by FEASIBLE). The
 of the above against SPARQL endpoints if an endpoint-based comparison is
 ever needed.
 
+## Architecture
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the enforced boundary between external generators, benchmark adapters, and KROWN.
+
 ## Repository conventions
+
+Physical RDF forms use strict `rdf-representation-receipt-v1` receipts. One `rdf-dataset-inventory-v1` file can reference several receipts only when all receipts record the same source RDF identity. Generated files and receipts stay under ignored `data/` directories. KROWN verifies them but does not generate them.
+
 
 Each benchmark folder is self-contained:
 
@@ -53,3 +70,7 @@ A committed result under `results/<run-id>/` must include the run manifest
 and summary files plus a short `RESULTS.md` recording hardware, OS, engine
 versions, dataset and scale, and any environment knobs — enough to reproduce
 the run from the benchmark README alone.
+
+## Experiment declarations
+
+Benchmark-owned experiment intent is stored under `<Benchmark>/experiments/`. The versioned `rdf-experiment-declaration-v1` contract binds a logical workload to representation receipts, system identities, and an execution policy. An optional `semantic_baseline` path can express benchmark-owned baseline intent. KROWN owns runtime orchestration and selects orchestration-owned baselines in scenario configuration.
